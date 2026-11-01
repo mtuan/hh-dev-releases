@@ -8,7 +8,7 @@ Create a new GitHub repository with these recommended values:
 
 - **Owner:** the user or organization that owns developer-tool releases.
 - **Repository name:** `cocos-build-dashboard-releases` or a company-specific name such as `hh-dev-releases`.
-- **Description:** `Signed Cocos Build Dashboard releases and production update control.`
+- **Description:** `Signed HayHay Dev Tools releases and production update control.`
 - **Visibility:** Private is recommended. Use Public only when anyone should download first-install packages from GitHub without authentication.
 - **Add README:** Off.
 - **Add .gitignore:** `No .gitignore`.
@@ -47,7 +47,7 @@ GitHub Releases hosts both first-install packages and automatic updates. The URL
 - If no identity exists, sign into Xcode with an Account Holder account and use **Xcode → Settings → Accounts → Manage Certificates** to create the Developer ID Application certificate. Apple requires this one-time manual step. Return to the dashboard and choose **Check again**; do not export the certificate manually.
 - Approve the normal macOS Keychain access prompt if it appears during private-key export.
 - Use an Apple ID belonging to the same developer team.
-- At account.apple.com, open **Sign-In and Security → App-Specific Passwords**, generate one with the label **Cocos Build Dashboard GitHub Actions**, and paste Apple’s generated password into the dashboard. The label is only for recognizing the credential; never enter the normal Apple ID or Mac login password.
+- At account.apple.com, open **Sign-In and Security → App-Specific Passwords**, generate one with the label **HayHay Dev Tools GitHub Actions**, and paste Apple’s generated password into the dashboard. The label is only for recognizing the credential; never enter the normal Apple ID or Mac login password.
 - Copy the 10-character Team ID from Apple Developer Membership details.
 
 These become `MAC_CSC_LINK`, `MAC_CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and `APPLE_TEAM_ID` Actions secrets.
@@ -70,6 +70,8 @@ These become `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD`, and `WINDOWS_PUBLISHER_NAME
 6. When the build is ready, choose **Roll to production**.
 
 Use Patch for compatible fixes, Minor for backward-compatible features, and Major for breaking changes. Stable is a production candidate; Beta is for developer testing. A platform build may be retried and republished without changing the other platform. Creating a build does not affect installed applications until that version is explicitly rolled to production.
+
+Promoting a release also publishes a responsive production install page through GitHub Pages. The page reads the selected immutable release, presents the available macOS and Windows installers with platform-specific instructions, and links back to the GitHub Release for verification. Open it from **Deploy → Builds → Install production**.
 
 ## 7. Promote or roll back
 

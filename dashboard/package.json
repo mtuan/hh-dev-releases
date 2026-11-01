@@ -2,12 +2,25 @@
   "name": "cocos-build-dashboard",
   "version": "0.1.0",
   "private": true,
-  "author": "HayHay",
-  "description": "Electron UI to run Cocos Creator headless CLI builds across multiple projects and platforms.",
+  "productName": "HayHay Dev Tools",
+  "author": {
+    "name": "HayHay"
+  },
+  "description": "Unified developer tools for configuring, building, testing, signing, and releasing HayHay Cocos projects.",
+  "keywords": [
+    "HayHay",
+    "developer tools",
+    "Cocos Creator",
+    "build automation",
+    "release management"
+  ],
+  "license": "UNLICENSED",
   "main": "dist/electron/main.js",
   "scripts": {
     "build": "npm run check:ui:all && npm run build:loading-runtime && tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && npm run build:renderer",
     "build:renderer": "node scripts/build-renderer.mjs",
+    "build:app-icon": "node scripts/build-app-icon.mjs",
+    "clean:release": "node scripts/clean-release.mjs",
     "check:ui": "node scripts/check-ui-conventions.mjs",
     "check:ui:all": "node scripts/check-ui-conventions.mjs --all",
     "build:loading-runtime": "esbuild resources/loading-kit/web/loading-graph-entry.js --bundle --platform=browser --format=iife --outfile=resources/loading-kit/web/loading-graph.js",
@@ -16,10 +29,10 @@
     "watch": "npm run dev",
     "dev:update:start": "node scripts/dev-update.mjs start",
     "dev:update:finish": "node scripts/dev-update.mjs finish",
-    "package": "npm run build && electron-builder --config electron-builder.config.cjs --publish never",
-    "package:mac": "npm run build && electron-builder --config electron-builder.config.cjs --mac --x64 --arm64 --publish never",
-    "package:win": "npm run build && electron-builder --config electron-builder.config.cjs --win --x64 --publish never",
-    "release": "npm run build && electron-builder --config electron-builder.config.cjs --publish always",
+    "package": "npm run clean:release && npm run build && electron-builder --config electron-builder.config.cjs --publish never",
+    "package:mac": "npm run clean:release && npm run build && electron-builder --config electron-builder.config.cjs --mac --x64 --arm64 --publish never",
+    "package:win": "npm run clean:release && npm run build && electron-builder --config electron-builder.config.cjs --win --x64 --publish never",
+    "release": "npm run clean:release && npm run build && electron-builder --config electron-builder.config.cjs --publish always",
     "cli": "npm run build && node dist/cli/index.js"
   },
   "devDependencies": {

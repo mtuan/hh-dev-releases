@@ -33,7 +33,7 @@ function createBuildGuide(repository: string, platforms: string[]): import('../.
         { title: 'Promote a tested version', description: 'Choose Roll to production on the exact version you tested.', values: [
             { label: 'Production pointer', value: 'channels/production.json' },
             { label: 'Update folder', value: 'cocos-build-dashboard' },
-        ] },
+        ], note: 'Promotion also publishes the production install page. Use Install production to open it.' },
         { title: 'Roll back if needed', description: 'Choose Roll to production on an older immutable version. No rebuild is required.' },
         { title: 'Install on developer machines', link: { label: 'GitHub Releases guide', url: 'https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases' }, note: 'Share the DMG or EXE from the selected release. Later updates come from the public update URL.' },
     ]);
@@ -43,6 +43,7 @@ function createBuildGuide(repository: string, platforms: string[]): import('../.
 function badge(build: ReleaseBuild): HTMLElement { const value = document.createElement('span'); value.className = `badge ${build.status === 'building' ? 'badge-running' : build.production ? 'badge-success' : build.channel === 'beta' ? 'badge-warning' : 'badge-neutral'}`; value.textContent = build.status === 'building' ? 'Building' : build.production ? 'Production' : build.channel === 'beta' ? 'Beta' : 'Ready'; return value; }
 function versionParts(value: string): number[] { return value.split(/[.-]/).map((part) => Number.parseInt(part, 10) || 0); }
 function compareVersions(left: string, right: string): number { const a = versionParts(left); const b = versionParts(right); for (let index = 0; index < Math.max(a.length, b.length); index += 1) { const difference = (a[index] ?? 0) - (b[index] ?? 0); if (difference) return difference; } return 0; }
+function installPageUrl(repository: string): string { const [owner = '', name = ''] = repository.split('/'); return name.toLowerCase() === `${owner.toLowerCase()}.github.io` ? `https://${owner.toLowerCase()}.github.io/` : `https://${owner.toLowerCase()}.github.io/${name}/`; }
 type VersionIncrement = 'patch' | 'minor' | 'major';
 interface ParsedVersion { major: number; minor: number; patch: number; beta?: number; }
 function parseVersion(value: string): ParsedVersion | undefined { const match = value.match(/^(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?$/); return match ? { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]), ...(match[4] ? { beta: Number(match[4]) } : {}) } : undefined; }
@@ -75,12 +76,19 @@ export async function renderDeployBuilds(options: { header: HTMLElement; content
         return;
     }
     const platformLabels = platforms.map((platform) => platform.label);
-    renderPageHeader(options.header, { title: 'Dashboard builds', description: `Create independent ${platformLabels.join(' and ')} builds, choose which version is in production, or roll back to a known working version.`, actions: [{ id: 'deploy-build-guide', label: 'Guide', className: 'btn-secondary', symbol: 'help' }, { id: 'deploy-refresh-builds', label: 'Refresh', className: 'btn-secondary', symbol: 'refresh' }, { id: 'deploy-create-build', label: 'New build', className: 'btn-primary', symbol: 'add' }] });
+    renderPageHeader(options.header, { title: 'Dashboard builds', description: `Create independent ${platformLabels.join(' and ')} builds, choose which version is in production, or roll back to a known working version.`, actions: [{ id: 'deploy-install-production', label: 'Install production', className: 'btn-secondary', symbol: 'download', disabled: !config.productionTag, title: config.productionTag ? 'Open the production install page' : 'Roll a completed build to production first' }, { id: 'deploy-build-guide', label: 'Guide', className: 'btn-secondary', symbol: 'help' }, { id: 'deploy-refresh-builds', label: 'Refresh', className: 'btn-secondary', symbol: 'refresh' }, { id: 'deploy-create-build', label: 'New build', className: 'btn-primary', symbol: 'add' }] });
+    const installButton = options.header.querySelector<HTMLButtonElement>('#deploy-install-production')!;
+    installButton.addEventListener('click', () => void window.buildApi.openExternalUrl(installPageUrl(config.repository)));
     let builds: ReleaseBuild[] = [];
     const table = createDataTable<ReleaseBuild>({ keyOf: (build) => build.id, items: [], emptyMessage: 'No completed dashboard builds yet.', pageSize: 10, pageSizeOptions: [10, 25, 50], preferenceKey: 'deploy-builds', columns: [
         { id: 'version', label: 'Version', width: '150px', render: (build) => `v${build.version}` }, { id: 'platform', label: 'Platform', width: '120px', render: (build) => build.platform === 'macos' ? 'macOS' : 'Windows' }, { id: 'name', label: 'Build', render: (build) => build.name },
         { id: 'created', label: 'Created', width: '210px', render: (build) => new Date(build.publishedAt ?? build.createdAt).toLocaleString() },
-        { id: 'status', label: 'Status', width: '120px', render: badge }, { id: 'action', label: '', width: '190px', align: 'end', render: (build) => productionAction(build, builds, () => void load()) },
+        { id: 'status', label: 'Status', width: '120px', render: badge }, { id: 'action', label: '', width: '190px', align: 'end', render: (build) => productionAction(build, () => builds, (tag) => {
+            const changedKeys = builds.filter((candidate) => candidate.production || candidate.tag === tag).map((candidate) => candidate.id);
+            builds = builds.map((candidate) => ({ ...candidate, production: candidate.tag === tag }));
+            table.updateItems(builds, changedKeys);
+            installButton.disabled = false; installButton.title = 'Open the production install page';
+        }) },
     ] });
     const layout = document.createElement('div'); layout.className = 'deploy-config-layout';
     const latestJobSlot = document.createElement('div'); latestJobSlot.hidden = true;
@@ -110,37 +118,42 @@ export async function renderDeployBuilds(options: { header: HTMLElement; content
             console.info(`[release:list-builds:${requestId}] ${phase} completed in ${Math.max(0, progress.elapsedMs - phaseStartedAt)}ms (${progress.elapsedMs}ms total).`);
             phase = progress.phase; phaseStartedAt = progress.elapsedMs; console.info(`[release:list-builds:${requestId}] Starting: ${phase}.`); update();
         };
-        try { const [allBuilds, jobs] = await Promise.all([window.buildApi.listReleaseBuilds(refresh, requestId), window.buildApi.getJobs()]); builds = allBuilds.filter((build) => build.status === 'ready'); table.setItems(builds); renderLatestJob(allBuilds, jobs); }
+        try { const [allBuilds, jobs] = await Promise.all([window.buildApi.listReleaseBuilds(refresh, requestId), window.buildApi.getJobs()]); builds = allBuilds.filter((build) => build.status === 'ready').sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()); table.setItems(builds); const hasProduction = builds.some((build) => build.production); installButton.disabled = !hasProduction; installButton.title = hasProduction ? 'Open the production install page' : 'Roll a completed build to production first'; renderLatestJob(allBuilds, jobs); }
         finally { const total = elapsed(); window.clearInterval(timer); releaseBuildProgressSink = undefined; console.info(`[release:list-builds:${requestId}] Finished with ${builds.length} visible build${builds.length === 1 ? '' : 's'} in ${total.toFixed(0)}ms.`); }
     }, { label: 'Loading dashboard builds' });
     options.header.querySelector<HTMLButtonElement>('#deploy-refresh-builds')?.addEventListener('click', () => void load(true).catch(showError));
     options.header.querySelector<HTMLButtonElement>('#deploy-build-guide')?.addEventListener('click', () => helpSidebar.toggle(createBuildGuide(config.repository, platformLabels)));
-    options.header.querySelector<HTMLButtonElement>('#deploy-create-build')?.addEventListener('click', () => void window.buildApi.getReleaseDeploymentInfo().then((info) => openCreateBuild(builds, info.version, platforms, () => void load().catch(showError))).catch(showError));
+    options.header.querySelector<HTMLButtonElement>('#deploy-create-build')?.addEventListener('click', () => openCreateBuild(builds, platforms, () => void load().catch(showError)));
     await load(false).catch(showError);
 }
 
-function productionAction(build: ReleaseBuild, builds: ReleaseBuild[], refresh: () => void): HTMLElement {
+function productionAction(build: ReleaseBuild, getBuilds: () => ReleaseBuild[], reconcile: (tag: string) => void): HTMLElement {
     const unavailable = build.status === 'building';
     const button = createButton({ label: unavailable ? 'Building' : build.production ? 'Production' : 'Roll to production', className: build.production || unavailable ? 'btn-secondary' : 'btn-primary', size: 'sm', symbol: build.production ? 'check' : unavailable ? 'action' : 'play', disabled: build.production || unavailable });
     button.addEventListener('click', async () => {
-        const config = await window.buildApi.getReleaseDeploymentConfig(); const production = builds.find((candidate) => candidate.production); const rollback = Boolean(production && compareVersions(build.version, production.version) < 0);
+        const config = await window.buildApi.getReleaseDeploymentConfig(); const production = getBuilds().find((candidate) => candidate.production); const rollback = Boolean(production && compareVersions(build.version, production.version) < 0);
         const accepted = await showConfirm({ title: rollback ? `Roll back to v${build.version}?` : `Roll v${build.version} to production?`, message: rollback ? `This replaces v${production?.version} in the automatic-update feed with v${build.version}.` : `This publishes v${build.version} to ${config.updateBaseUrl || 'the configured production update feed'}.`, confirmLabel: rollback ? 'Roll back' : 'Roll to production', danger: rollback });
         if (!accepted) return; button.disabled = true;
-        try { await window.buildApi.promoteReleaseBuild(build.tag); refresh(); } catch (error) { showError(error); button.disabled = false; }
+        try { await window.buildApi.promoteReleaseBuild(build.tag); reconcile(build.tag); } catch (error) { showError(error); button.disabled = false; }
     }); return button;
 }
 
-function openCreateBuild(builds: ReleaseBuild[], currentVersion: string, platforms: Array<{ value: ReleasePlatform; label: string }>, onCreated: () => void): void {
+function openCreateBuild(builds: ReleaseBuild[], platforms: Array<{ value: ReleasePlatform; label: string }>, onCreated: () => void): void {
     type BuildForm = { increment: VersionIncrement; channel: UpdateChannel; version: string; platform: ReleasePlatform };
+    let currentVersion = '0.0.0';
     const calculate = (values: Pick<BuildForm, 'increment' | 'channel' | 'platform'>): string => nextVersion(builds, currentVersion, values.increment, values.channel, values.platform);
     const initialPlatform = platforms[0].value;
-    const form = createDynamicForm<BuildForm>({ initialValues: { increment: 'patch', channel: 'stable', platform: initialPlatform, version: nextVersion(builds, currentVersion, 'patch', 'stable', initialPlatform) }, fields: [
+    const form = createDynamicForm<BuildForm>({ initialValues: { increment: 'patch', channel: 'stable', platform: initialPlatform, version: calculate({ increment: 'patch', channel: 'stable', platform: initialPlatform }) }, fields: [
         { key: 'platform', type: 'segmented', label: 'Platform', options: platforms, onChange: (_value, context) => context.setValue('version', calculate(context.values)) },
         { key: 'increment', type: 'segmented', label: 'Version change', options: [{ value: 'patch', label: 'Patch' }, { value: 'minor', label: 'Minor' }, { value: 'major', label: 'Major' }], onChange: (_value, context) => context.setValue('version', calculate(context.values)) },
         { key: 'channel', type: 'segmented', label: 'Channel', options: [{ value: 'stable', label: 'Stable' }, { value: 'beta', label: 'Beta' }], onChange: (_value, context) => context.setValue('version', calculate(context.values)) },
         { key: 'version', type: 'text', label: 'Next version', readOnly: true, description: 'If the other platform already has an unmatched version, this platform uses that same version. Otherwise the next version is calculated normally.' },
     ], layout: [['platform'], ['increment'], ['channel'], ['version']] });
-    showModal({ title: 'Create dashboard build', content: form.element, actions: [{ label: 'Cancel', run: (close) => close() }, { label: 'Create build', className: 'btn-primary', run: (close) => { if (!form.validate()) return; const { version, channel, platform } = form.values; close(); void window.buildApi.createReleaseBuild({ version, channel, platform }).then(onCreated).catch(showError); } }] });
+    const modal = showModal({ title: 'Create dashboard build', content: form.element, actions: [{ label: 'Cancel', run: (close) => close() }, { label: 'Create build', className: 'btn-primary', run: (close) => { if (!form.validate()) return; const { version, channel, platform } = form.values; close(); void window.buildApi.createReleaseBuild({ version, channel, platform }).then(onCreated).catch(showError); } }] });
+    void modal.runWithLoading(async () => {
+        ({ version: currentVersion } = await window.buildApi.getReleaseDeploymentInfo());
+        form.setValue('version', calculate(form.values), false);
+    }, 'Preparing build options…').catch((error) => { modal.close(); showError(error); });
 }
 
 function showError(error: unknown): void { showTechnicalError('Release operation failed', 'The dashboard could not complete the release operation.', error instanceof Error ? error.stack ?? error.message : String(error)); }

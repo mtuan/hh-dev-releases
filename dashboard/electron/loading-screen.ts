@@ -302,7 +302,7 @@ function syncNativeLoading(projectPath: string, document: LoadingScreenDocument,
         fs.writeFileSync(path.join(root, 'config.json'), `${JSON.stringify(config, null, 2)}\n`, 'utf8');
         fs.copyFileSync(path.join(resourcesRoot, 'loading-kit', 'runtime', 'loading-runtime-core.ts'), path.join(root, `${loadingRuntimeCoreName(platform)}.ts`));
         fs.writeFileSync(path.join(root, `${runtimeName}.ts`), loadingNativeRuntimeSource(family, config, platform), 'utf8');
-        fs.writeFileSync(path.join(root, 'README.md'), `Managed by HayHay Tools. Add ${runtimeName} to the Canvas in the project loading scene and call setProgress(0..1) while game assets load. Re-save the Loading screen page after changing shared or platform settings.\n`, 'utf8');
+        fs.writeFileSync(path.join(root, 'README.md'), `Managed by HayHay Dev Tools. Add ${runtimeName} to the Canvas in the project loading scene and call setProgress(0..1) while game assets load. Re-save the Loading screen page after changing shared or platform settings.\n`, 'utf8');
         for (const relative of [config.backgroundImage, config.logoImage, config.progressFrameImage, config.progressBarImage].filter(Boolean) as string[]) {
             const source = assetPath(projectPath, relative);
             if (source) fs.copyFileSync(source, path.join(root, path.basename(source)));

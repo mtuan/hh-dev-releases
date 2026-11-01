@@ -1,0 +1,48 @@
+.ui-toast-region {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 120;
+    display: flex;
+    width: min(390px, calc(100vw - 32px));
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.ui-toast {
+    overflow: hidden;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 44px var(--shadow);
+    opacity: 0;
+    transform: translateY(-8px) scale(.985);
+    transition: opacity 160ms ease, transform 160ms ease;
+    pointer-events: auto;
+}
+
+.ui-toast.is-open { opacity: 1; transform: translateY(0) scale(1); }
+.ui-toast.is-closing { opacity: 0; transform: translateX(12px) scale(.985); pointer-events: none; }
+.ui-toast-success { border-color: color-mix(in srgb, var(--success) 48%, var(--border)); }
+.ui-toast-error { border-color: var(--danger-border); }
+.ui-toast-header { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 13px 12px 13px 14px; }
+.ui-toast-symbol { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; }
+.ui-toast-symbol svg { width: 16px; height: 16px; }
+.ui-toast-success .ui-toast-symbol { color: var(--success); background: var(--success-soft); }
+.ui-toast-error .ui-toast-symbol { color: var(--danger); background: var(--danger-soft); }
+.ui-toast-info .ui-toast-symbol { color: var(--info-text); background: var(--info-soft); }
+.ui-toast-copy { min-width: 0; padding-top: 4px; }
+.ui-toast-title { display: block; font-size: 14px; line-height: 1.35; }
+.ui-toast-message { margin: 4px 0 0; color: var(--text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+.ui-toast-close { color: var(--text-muted); }
+.ui-toast-actions { display: flex; justify-content: flex-end; padding: 10px 12px; background: var(--surface-2); border-top: 1px solid var(--border); }
+
+@media (max-width: 560px) {
+    .ui-toast-region { top: 10px; right: 10px; width: calc(100vw - 20px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ui-toast { transition: none; }
+}

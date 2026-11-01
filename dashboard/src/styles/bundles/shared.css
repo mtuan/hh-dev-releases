@@ -15,6 +15,7 @@
 @import '../components/links.css';
 @import '../components/forms.css';
 @import '../components/modal.css';
+@import '../components/toast.css';
 @import '../components/file-tree.css';
 @import '../pages/logs.css';
 @import '../pages/fake-players.css';

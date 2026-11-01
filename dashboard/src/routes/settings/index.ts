@@ -23,7 +23,7 @@ export function renderSettingsRoute(options: {
     download(): Promise<AppUpdateState>;
     install(): Promise<AppUpdateState>;
 }): SettingsRouteControl {
-    renderPageHeader(options.header, { title: 'Settings', description: 'Manage Cocos Build Dashboard updates and release preferences.', actions: [
+    renderPageHeader(options.header, { title: 'Settings', description: 'Manage HayHay Dev Tools updates and release preferences.', actions: [
         { id: 'settings-save-btn', label: 'Save', className: 'btn-primary' },
         { id: 'settings-check-update-btn', label: 'Check for updates', className: 'btn-secondary', symbol: 'refresh', shortcut: false },
     ] });

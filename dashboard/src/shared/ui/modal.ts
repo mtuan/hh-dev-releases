@@ -2,6 +2,7 @@ import { createButton } from './fields';
 import { createIconButton } from './icon-button';
 import { createActionList, createActionListItem } from './action-list';
 import { bindCopyAction } from './copy-action';
+import { runWithLoadingState, type LoadingState } from './loading-state';
 
 export interface ModalAction {
     label: string;
@@ -18,13 +19,19 @@ interface ModalOptions {
     onClose?: () => void;
 }
 
+export interface ModalControl {
+    close(): void;
+    setActions(actions?: ModalAction[]): void;
+    runWithLoading<T>(task: (loading: LoadingState) => Promise<T>, label?: string): Promise<T>;
+}
+
 const icons: Record<NonNullable<ModalOptions['icon']>, string> = {
     warning: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.4 2.8 1.7 14.4A1.8 1.8 0 0 0 3.3 17h13.4a1.8 1.8 0 0 0 1.6-2.6L11.6 2.8a1.8 1.8 0 0 0-3.2 0Z"/><path d="M10 7v4M10 14h.01"/></svg>',
     info: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="8"/><path d="M10 9v5M10 6h.01"/></svg>',
     settings: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M15.7 4.3l-1.4 1.4M5.7 14.3l-1.4 1.4"/></svg>',
 };
 
-export function showModal(options: ModalOptions): { close(): void } {
+export function showModal(options: ModalOptions): ModalControl {
     const overlay = document.createElement('div'); overlay.className = 'modal-overlay modal-overlay-animated';
     const dialog = document.createElement('section'); dialog.className = 'app-modal'; dialog.setAttribute('role', 'dialog'); dialog.setAttribute('aria-modal', 'true');
     const header = document.createElement('header'); header.className = 'app-modal-header';
@@ -42,21 +49,25 @@ export function showModal(options: ModalOptions): { close(): void } {
         overlay.classList.remove('is-open'); overlay.classList.add('is-closing');
         window.setTimeout(() => { overlay.remove(); options.onClose?.(); }, 170);
     };
-    if (options.actions?.length) {
-        const footer = document.createElement('footer'); footer.className = 'app-modal-footer';
-        for (const action of options.actions) {
+    let footer: HTMLElement | undefined;
+    const setActions = (actions?: ModalAction[]): void => {
+        footer?.remove(); footer = undefined;
+        if (!actions?.length) return;
+        footer = document.createElement('footer'); footer.className = 'app-modal-footer';
+        for (const action of actions) {
             const button = createButton({ label: action.label, className: action.className ?? 'btn-secondary' });
             if (action.copyValue !== undefined) bindCopyAction(button, action.copyValue);
             else button.addEventListener('click', () => action.run?.(close));
             footer.appendChild(button);
         }
         dialog.appendChild(footer);
-    }
+    };
+    setActions(options.actions);
     closeButton.addEventListener('click', close);
     overlay.addEventListener('click', (event) => { if (event.target === overlay && options.closeOnBackdrop !== false) close(); });
     document.addEventListener('keydown', onKeyDown); overlay.appendChild(dialog); document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-open')); closeButton.focus();
-    return { close };
+    return { close, setActions, runWithLoading: (task, label = 'Loading…') => runWithLoadingState(dialog, task, { label }) };
 }
 
 function messageContent(message: string): HTMLDivElement {

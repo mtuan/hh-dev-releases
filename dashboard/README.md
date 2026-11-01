@@ -1,4 +1,4 @@
-# Cocos Build Dashboard
+# HayHay Dev Tools
 
 Electron app chạy độc lập, dùng để build nhiều project Cocos Creator qua CLI headless build
 (`CocosCreator --project <path> --build "platform=...;debug=...;buildPath=..."`), xem log/tiến trình theo thời gian thực.
@@ -36,6 +36,11 @@ Lệnh dev build một lần rồi watch TypeScript, renderer bundle, HTML và C
 thay đổi; không cần chạy `npm run package` cho từng thay đổi. `npm run package` chỉ dùng để tạo artifact `.app`/`.exe`
 trước khi phát hành hoặc kiểm tra bản đóng gói.
 
+Bản development dùng tên **HayHay Dev Tools — Development**, application ID
+`com.hayhay.cocos-build-dashboard.dev`, và icon development riêng. Bản đóng gói dùng tên **HayHay Dev Tools**,
+application ID `com.hayhay.cocos-build-dashboard`, và icon production. Khi chẩn đoán runtime, xác định process bằng
+executable/cwd chính xác; không mở app theo display name vì macOS có thể chọn một packaging artifact cũ.
+
 Khi `npm run dev` đang chạy, không cần chạy lại `npm run build` sau mỗi thay đổi UI. Theo dõi output của watcher
 để biết lỗi type/bundle. Chỉ dùng `npm run build` cho kiểm tra one-shot có chủ đích và `npm run package` cho release.
 
@@ -52,21 +57,22 @@ Không cần `npm start`/dev mỗi lần — đóng gói 1 lần thành file `.a
 npm run package
 ```
 
+Mọi lệnh package/release tự xóa toàn bộ output `release/` cũ trước khi build để app bundle và icon cũ không còn
+lẫn với artifact mới.
+
 Chạy trên máy nào thì ra bản cho máy đó (dựa theo config `build` trong `package.json`):
 
-- **macOS** (Apple Silicon): `release/mac-arm64/Cocos Build Dashboard.app` — kéo vào `/Applications` để dùng như
-  app bình thường. Chưa ký code nên lần mở đầu tiên macOS có thể chặn — click phải vào app > Open để xác nhận
-  (chỉ cần làm 1 lần).
-- **Windows** (x64): `release/Cocos Build Dashboard <version>.exe` — file portable, không cần cài đặt, copy
-  sang máy Windows nào cũng chạy được, double-click mở thẳng. Chưa ký code nên Windows SmartScreen có thể cảnh
-  báo "Unknown publisher" lần đầu — chọn "More info" > "Run anyway".
+- **macOS** (Apple Silicon): `release/mac-arm64/HayHay Dev Tools.app` — kéo vào `/Applications` để dùng như
+  app bình thường. Bản CI release được ký và notarize; bản local chỉ được ký khi máy build có cấu hình certificate.
+- **Windows** (x64): `release/HayHay-Dev-Tools-<version>-win-x64.exe` — chạy installer để cài đặt. Bản CI release
+  được ký khi deployment có certificate Authenticode hợp lệ.
 
 `npm run package` build theo đúng hệ điều hành đang chạy lệnh. Muốn build riêng target: `npx electron-builder --mac`
 hoặc `npx electron-builder --win` (build Windows từ macOS vẫn chạy được — electron-builder tự tải Wine/NSIS cần
 thiết, không cần cài gì thêm, đã test thành công).
 
 Bản đóng gói lưu registry máy cục bộ `projects.json` ở thư mục dữ liệu người dùng chuẩn của Electron
-(`~/Library/Application Support/Cocos Build Dashboard/` trên macOS, `%APPDATA%\Cocos Build Dashboard\` trên
+(`~/Library/Application Support/cocos-build-dashboard/` trên macOS, `%APPDATA%\cocos-build-dashboard\` trên
 Windows), tách biệt với `data/projects.json` dùng khi chạy dev qua `npm start`. Registry này chỉ chứa
 path và executable riêng của từng máy; platform settings nằm trong project như mô tả bên dưới.
 

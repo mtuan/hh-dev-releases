@@ -11,6 +11,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 env:
   CI_RELEASE: 'true'
@@ -173,3 +175,28 @@ jobs:
       - name: Select the production release
         env: { GH_TOKEN: '${{ github.token }}' }
         run: gh release edit "${{ needs.command.outputs.tag }}" --repo "${GITHUB_REPOSITORY}" --latest
+
+  publish-install-page:
+    needs: [command, promote]
+    if: always() && needs.command.outputs.action == 'promote' && needs.promote.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: '${{ steps.deployment.outputs.page_url }}'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the selected production release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${{ needs.command.outputs.tag }}" > production-release.json
+      - name: Generate the production install page
+        run: node .github/scripts/install-page.mjs production-release.json _site/index.html
+      - uses: actions/configure-pages@v5
+        with: { enablement: true }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deployment
+        uses: actions/deploy-pages@v4

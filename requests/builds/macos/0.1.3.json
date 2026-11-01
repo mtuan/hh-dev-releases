@@ -1,0 +1,9 @@
+{
+  "action": "build",
+  "version": "0.1.3",
+  "channel": "stable",
+  "tag": "dashboard-v0.1.3",
+  "platform": "macos",
+  "createdAt": "2026-11-01T09:40:44.134Z",
+  "jobId": "job-0ae7f62e-e4d1-4afa-a120-c5115d93a93d"
+}

@@ -13,6 +13,7 @@ import { createPanelHeaderAction } from '../../shared/ui/panel';
 import { createHelpSidebar, type HelpSidebarContent } from '../../shared/ui/help-sidebar';
 import { createSetupGuide, type SetupGuideStep } from '../../shared/ui/setup-guide';
 import { createDataTable } from '../../shared/ui/data-table';
+import { showErrorToast, showSuccessToast } from '../../shared/ui/toast';
 
 let macSigningProgressSink: ((progress: MacSigningProgress) => void) | undefined;
 window.buildApi.onMacSigningProgress((progress) => macSigningProgressSink?.(progress));
@@ -94,7 +95,7 @@ const groups: ConfigurationGroup[] = [
             { title: 'Certificate password', description: 'The dashboard generates a strong password and uploads it with the validated certificate when GitHub authentication is available.' },
             { title: 'Apple ID', description: 'Enter the email address of an Apple ID in the same developer team as the certificate.', link: { label: 'Apple Developer account', url: 'https://developer.apple.com/account/' } },
             { title: 'App-specific password', description: 'At account.apple.com, open Sign-In and Security → App-Specific Passwords. Choose Generate an app-specific password, enter the label below, click Create, then copy Apple’s generated password into the App-specific password field in this panel. The label only helps you recognize this credential later.', link: { label: 'Open Apple account security', url: 'https://account.apple.com/account/manage' }, values: [
-                { label: 'Password label', value: 'Cocos Build Dashboard GitHub Actions', copyValue: 'Cocos Build Dashboard GitHub Actions' },
+                { label: 'Password label', value: 'HayHay Dev Tools GitHub Actions', copyValue: 'HayHay Dev Tools GitHub Actions' },
                 { label: 'Password type', value: 'App-specific password' },
                 { label: 'Paste generated value into', value: 'App-specific password' },
             ], note: 'Do not enter your normal Apple ID password or Mac login password. Apple shows the generated password once, so copy it before closing the dialog.' },
@@ -106,7 +107,7 @@ const groups: ConfigurationGroup[] = [
             required({ key: 'macCertificate', type: 'file', label: 'Developer ID certificate', accept: '.p12,.pfx', chooseFile: () => window.buildApi.pickFile(), description: 'Use the lock action in this panel to detect, export, validate, and fill this automatically. Manual file selection remains available for an existing encrypted .p12.', links: [{ label: 'Create Developer ID certificate', url: 'https://developer.apple.com/help/account/certificates/create-developer-id-certificates' }] }),
             required({ key: 'macCertificatePassword', type: 'password', label: 'Certificate password', description: 'Filled automatically with the strong password generated for the managed .p12 export. Enter it manually only when selecting your own existing archive.' }),
             required({ key: 'appleId', type: 'email', label: 'Apple ID', description: 'Enter the Apple ID email that belongs to the Apple Developer team used to sign this application.', links: [{ label: 'Open Apple Developer account', url: 'https://developer.apple.com/account/' }] }),
-            required({ key: 'appleAppPassword', type: 'password', label: 'App-specific password', description: 'At account.apple.com, open Sign-In and Security → App-Specific Passwords. Generate one using the label “Cocos Build Dashboard GitHub Actions”, then paste Apple’s generated password here—not the label, Apple ID password, or Mac login password.', links: [{ label: 'Manage Apple Account', url: 'https://account.apple.com/account/manage' }, { label: 'App-specific password guide', url: 'https://support.apple.com/en-us/102654' }] }),
+            required({ key: 'appleAppPassword', type: 'password', label: 'App-specific password', description: 'At account.apple.com, open Sign-In and Security → App-Specific Passwords. Generate one using the label “HayHay Dev Tools GitHub Actions”, then paste Apple’s generated password here—not the label, Apple ID password, or Mac login password.', links: [{ label: 'Manage Apple Account', url: 'https://account.apple.com/account/manage' }, { label: 'App-specific password guide', url: 'https://support.apple.com/en-us/102654' }] }),
             required({ key: 'appleTeamId', type: 'text', label: 'Apple team ID', description: 'Open developer.apple.com/account and view Membership details. Copy the 10-character Team ID for the team that owns the Developer ID certificate.', links: [{ label: 'Locate your Team ID', url: 'https://developer.apple.com/help/account/manage-your-team/locate-your-team-id/' }] }),
         ],
         layout: [['macCertificate', 'macCertificatePassword'], ['appleId', 'appleAppPassword'], ['appleTeamId']],
@@ -181,8 +182,9 @@ export function renderDeployConfigurations(options: { header: HTMLElement; conte
                 const saved = await window.buildApi.saveReleaseDeploymentConfig(config);
                 savedConfig = saved;
                 forms.forEach(({ group, form }) => form.reset(groupValues(saved, group.fields)));
+                showSuccessToast('Configurations saved', 'Deployment configuration and release credentials are up to date.');
             } catch (error) {
-                showTechnicalError('Could not save deployment configuration', 'The local configuration or GitHub Actions secrets could not be updated.', error instanceof Error ? error.stack ?? error.message : String(error));
+                showErrorToast('Could not save deployment configuration', 'The local configuration or GitHub Actions secrets could not be updated.', error instanceof Error ? error.stack ?? error.message : String(error));
                 throw error;
             }
         },

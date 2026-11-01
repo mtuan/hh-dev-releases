@@ -40,7 +40,7 @@ int main(int argc, const char *argv[]) {
         SecItemImportExportKeyParameters parameters = {0};
         parameters.version = SEC_KEY_IMPORT_EXPORT_PARAMS_VERSION;
         parameters.passphrase = (__bridge CFTypeRef)password;
-        parameters.alertTitle = CFSTR("Cocos Build Dashboard signing export");
+        parameters.alertTitle = CFSTR("HayHay Dev Tools signing export");
         parameters.alertPrompt = (__bridge CFStringRef)[NSString stringWithFormat:@"Approve export of %@.", targetName];
         CFDataRef exported = NULL;
         status = SecItemExport(selected, kSecFormatPKCS12, 0, &parameters, &exported);

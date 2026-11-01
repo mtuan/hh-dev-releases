@@ -46,7 +46,7 @@ renderPageHeader(document.getElementById('projects-page-header')!, {
     actions: [{ id: 'add-project-btn', label: 'Add project folder', className: 'btn-primary' }],
 });
 renderPageHeader(document.getElementById('project-setup-page-header')!, {
-    title: 'Configurations', description: 'Manage project-wide settings and components required by HayHay Tools.',
+    title: 'Configurations', description: 'Manage project-wide settings and components required by HayHay Dev Tools.',
 });
 renderPageHeader(document.getElementById('platforms-page-header')!, {
     title: 'Platforms', description: 'Choose which target platforms this project supports.',
@@ -154,7 +154,8 @@ const facebookConsolePageEl = document.getElementById('facebook-console-page') a
 const facebookConsoleHeaderEl = document.getElementById('facebook-console-page-header') as HTMLElement;
 const facebookConsoleContentEl = document.getElementById('facebook-console-page-content') as HTMLElement;
 const facebookConsoleNavItem = document.getElementById('facebook-console-nav') as HTMLElement;
-createCollapsibleSidebar({ element: settingsSidebarEl, storageKey: 'cocos-build-dashboard:settings-sidebar-collapsed' });
+const APPLICATION_SIDEBAR_STORAGE_KEY = 'application-collapsed';
+createCollapsibleSidebar({ element: settingsSidebarEl, storageKey: APPLICATION_SIDEBAR_STORAGE_KEY });
 const platformConfigsListEl = document.getElementById('platform-configs-list') as HTMLUListElement;
 const platformConfigsNavItem = document.querySelector<HTMLButtonElement>('.nav-item[data-route="platform-configs"]')!;
 const platformManageListEl = document.getElementById('platform-manage-list') as HTMLElement;
@@ -164,8 +165,8 @@ const openFacebookHostingBtn = document.getElementById('open-facebook-hosting-bt
 const openLocalPreviewBtn = document.getElementById('open-local-preview-btn') as HTMLButtonElement;
 const workspaceShellEl = document.getElementById('workspace-shell') as HTMLElement;
 const rootSidebarEl = document.getElementById('root-sidebar') as HTMLElement;
-createCollapsibleSidebar({ element: rootSidebarEl, storageKey: 'cocos-build-dashboard:root-sidebar-collapsed' });
-createCollapsibleSidebar({ element: document.getElementById('project-panel') as HTMLElement, storageKey: 'cocos-build-dashboard:platform-sidebar-collapsed' });
+createCollapsibleSidebar({ element: rootSidebarEl, storageKey: APPLICATION_SIDEBAR_STORAGE_KEY });
+createCollapsibleSidebar({ element: document.getElementById('project-panel') as HTMLElement, storageKey: APPLICATION_SIDEBAR_STORAGE_KEY });
 const appHeaderEyebrowEl = document.getElementById('app-header-eyebrow') as HTMLElement;
 const breadcrumbsEl = document.getElementById('app-breadcrumbs') as HTMLElement;
 const globalBackBtn = document.getElementById('global-back-btn') as HTMLButtonElement;
@@ -361,7 +362,7 @@ function renderBreadcrumbs(page: AppPage, project: ProjectConfig | undefined): v
             const current = document.createElement('span'); current.className = 'breadcrumb-current'; current.textContent = label; breadcrumbsEl.appendChild(current);
         }
     };
-    add('HayHay Tools', '/', () => showPage('projects'));
+    add('HayHay Dev Tools', '/', () => showPage('projects'));
     if (page === 'not-found') { add('Page not found'); return; }
     if (page === 'ui') { add('UI components'); return; }
     if (page === 'settings') { add('Settings'); return; }

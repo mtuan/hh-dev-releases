@@ -7,6 +7,8 @@ import { createPopover, type PopoverControl } from './popover';
 export interface CollapsibleSidebarOptions { element: HTMLElement; label?: string; storageKey?: string; collapsible?: boolean; collapsed?: boolean; }
 export interface CollapsibleSidebar { readonly collapsed: boolean; setCollapsed(collapsed: boolean): void; toggle(): void; }
 
+const synchronizedSidebars = new Map<string, Set<(collapsed: boolean) => void>>();
+
 /** Adds the standard persisted collapse behavior to a dashboard sidebar. Collapsible by default. */
 export function createCollapsibleSidebar(options: CollapsibleSidebarOptions): CollapsibleSidebar {
     const collapsible = options.collapsible ?? true; const element = options.element; element.classList.add('ui-sidebar');
@@ -17,10 +19,10 @@ export function createCollapsibleSidebar(options: CollapsibleSidebarOptions): Co
             const text = document.createElement('span'); text.className = 'ui-sidebar-item-label'; text.textContent = node.textContent.trim(); item.replaceChild(text, node);
         }
     });
-    let header = element.querySelector<HTMLElement>(':scope > .ui-sidebar-header');
-    if (!header) { header = document.createElement('div'); header.className = 'ui-sidebar-header'; element.prepend(header); }
-    let label = header.querySelector<HTMLElement>('.ui-sidebar-label');
-    if (!label && options.label) { label = document.createElement('span'); label.className = 'ui-sidebar-label'; label.textContent = options.label; header.prepend(label); }
+    let footer = element.querySelector<HTMLElement>(':scope > .ui-sidebar-footer');
+    if (!footer) { footer = document.createElement('div'); footer.className = 'ui-sidebar-footer'; element.append(footer); }
+    let label = footer.querySelector<HTMLElement>('.ui-sidebar-label');
+    if (!label && options.label) { label = document.createElement('span'); label.className = 'ui-sidebar-label'; label.textContent = options.label; footer.prepend(label); }
     let collapsed = false; let toggleButton: HTMLButtonElement | null = null;
     const parentPopovers = new Map<HTMLElement, PopoverControl>();
     const closeParentPopovers = (): void => { parentPopovers.forEach((popover) => popover.hide()); };
@@ -41,12 +43,16 @@ export function createCollapsibleSidebar(options: CollapsibleSidebarOptions): Co
         }
         return list;
     };
-    const setCollapsed = (next: boolean): void => {
+    const applyCollapsed = (next: boolean, synchronize: boolean): void => {
         if (!collapsible) return; collapsed = next; if (!collapsed) closeParentPopovers(); element.classList.toggle('is-collapsed', collapsed); toggleButton?.setAttribute('aria-expanded', String(!collapsed));
         if (toggleButton) { const action = collapsed ? 'Expand' : 'Collapse'; toggleButton.title = `${action} ${options.label ?? 'sidebar'}`; toggleButton.setAttribute('aria-label', toggleButton.title); }
-        if (options.storageKey) setPreference(`sidebar.${options.storageKey}`, collapsed);
+        if (options.storageKey && synchronize) {
+            setPreference(`sidebar.${options.storageKey}`, collapsed);
+            synchronizedSidebars.get(options.storageKey)?.forEach((update) => update(collapsed));
+        }
     };
-    if (collapsible) { toggleButton = createIconButton({ icon: 'sidebar', label: `Collapse ${options.label ?? 'sidebar'}`, variant: 'ghost', size: 'md', className: 'ui-sidebar-toggle' }); toggleButton.setAttribute('aria-expanded', 'true'); header.appendChild(toggleButton); toggleButton.addEventListener('click', () => setCollapsed(!collapsed)); }
+    const setCollapsed = (next: boolean): void => applyCollapsed(next, true);
+    if (collapsible) { toggleButton = createIconButton({ icon: 'sidebar', label: `Collapse ${options.label ?? 'sidebar'}`, variant: 'ghost', size: 'md', className: 'ui-sidebar-toggle' }); toggleButton.setAttribute('aria-expanded', 'true'); footer.appendChild(toggleButton); toggleButton.addEventListener('click', () => setCollapsed(!collapsed)); }
     element.querySelectorAll<HTMLElement>('.nav-tool-parent').forEach((parent) => {
         parent.tabIndex = 0; parent.setAttribute('role', 'button'); parent.setAttribute('aria-haspopup', 'menu');
         const openMenu = (event: Event): void => {
@@ -56,6 +62,10 @@ export function createCollapsibleSidebar(options: CollapsibleSidebarOptions): Co
         };
         parent.addEventListener('click', openMenu); parent.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') openMenu(event); });
     });
-    const stored = options.storageKey ? getPreference(`sidebar.${options.storageKey}`, Boolean(options.collapsed), options.storageKey) : Boolean(options.collapsed); setCollapsed(stored);
+    if (options.storageKey) {
+        const group = synchronizedSidebars.get(options.storageKey) ?? new Set<(collapsed: boolean) => void>();
+        group.add((next) => applyCollapsed(next, false)); synchronizedSidebars.set(options.storageKey, group);
+    }
+    const stored = options.storageKey ? getPreference(`sidebar.${options.storageKey}`, Boolean(options.collapsed), options.storageKey) : Boolean(options.collapsed); applyCollapsed(stored, false);
     return { get collapsed() { return collapsed; }, setCollapsed, toggle() { setCollapsed(!collapsed); } };
 }

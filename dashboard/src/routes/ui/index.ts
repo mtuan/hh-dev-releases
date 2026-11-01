@@ -17,6 +17,7 @@ import { createHelpSidebar } from '../../shared/ui/help-sidebar';
 import { createSetupGuide } from '../../shared/ui/setup-guide';
 import { bindCopyAction } from '../../shared/ui/copy-action';
 import { createPanelHeaderAction } from '../../shared/ui/panel';
+import { showErrorToast, showSuccessToast } from '../../shared/ui/toast';
 
 interface Options { header: HTMLElement; content: HTMLElement; }
 
@@ -89,7 +90,7 @@ export function renderUiShowcaseRoute(options: Options): void {
         createSettingsPanel({ title: 'Compact inline exception', layout: 'inline', rows: [{ title: 'Name', actions: createSettingsControl(createTextField({ value: 'Explicit opt-in' })) }] }),
     );
     settingsPanelDemo.append(settingsList);
-    const sidebarDemo = demo('Collapsible sidebar', 'Sidebars are collapsible by default, persist state when given a storage key, and support collapsible: false.');
+    const sidebarDemo = demo('Collapsible sidebar', 'The collapse action stays at the bottom. Sidebars persist and synchronize state when they share a storage key, and support collapsible: false.');
     const sampleSidebar = document.createElement('aside'); sampleSidebar.className = 'ui-showcase-sidebar'; const sampleNavigation = document.createElement('nav'); sampleNavigation.textContent = 'Sidebar content'; sampleSidebar.appendChild(sampleNavigation); createCollapsibleSidebar({ element: sampleSidebar, label: 'Example tools' }); sidebarDemo.append(sampleSidebar);
     const actionListDemo = demo('Action list', 'Full-width selectable rows share title, metadata, trailing status, hover, selected, and highlighted states.');
     const sampleList = createActionList(); const ready = document.createElement('span'); ready.className = 'badge badge-success'; ready.textContent = 'Ready'; const firstItem = createActionListItem({ title: 'App icon (1024 × 1024)', meta: 'app-icon.jpg · 1024 × 1024', trailing: ready, selected: true }); const running = document.createElement('span'); running.className = 'badge badge-running'; running.textContent = 'Running'; const secondItem = createActionListItem({ title: 'Build Android development', meta: 'build · just now · 42s', trailing: running, highlighted: true }); const rowActions = document.createElement('div'); rowActions.append(createIconButton({ icon: 'trash', label: 'Remove item', variant: 'control', size: 'sm' })); const thirdItem = createActionListItem({ title: 'Project with a secondary action', meta: '/Projects/Sample', actions: rowActions }); sampleList.append(firstItem.element, secondItem.element, thirdItem.element); actionListDemo.append(sampleList);
@@ -121,13 +122,20 @@ export function renderUiShowcaseRoute(options: Options): void {
     const overlays = section('Overlays', 'Anchored menus and pickers use Popover; focused workflows and decisions use Modal.');
     const overlayDemo = demo('Popover and modal'); const popoverButton = createButton({ label: 'Open popover', className: 'btn-secondary', symbol: 'action' }); const popoverContent = document.createElement('div'); popoverContent.className = 'ui-showcase-popover-content'; popoverContent.textContent = 'Reusable anchored content'; createPopover({ trigger: popoverButton, content: popoverContent });
     const sidePopoverButton = createButton({ label: 'Open side popover', className: 'btn-secondary', symbol: 'action' }); const sidePopoverContent = document.createElement('div'); sidePopoverContent.className = 'ui-showcase-popover-content'; sidePopoverContent.textContent = 'Right-placed content for collapsed navigation'; createPopover({ trigger: sidePopoverButton, content: sidePopoverContent, placement: 'right' });
-    const modalButton = createButton({ label: 'Open modal', className: 'btn-secondary', symbol: 'action' }); modalButton.addEventListener('click', () => { const content = document.createElement('p'); content.textContent = 'Reusable modal content for focused tasks and decisions.'; showModal({ title: 'Modal example', icon: 'info', content, actions: [{ label: 'Close', className: 'btn-primary', run: (close) => close() }] }); }); overlayDemo.append(row(popoverButton, sidePopoverButton, modalButton)); grid(overlays).append(overlayDemo);
+    const modalButton = createButton({ label: 'Open modal', className: 'btn-secondary', symbol: 'action' }); modalButton.addEventListener('click', () => { const content = document.createElement('p'); content.textContent = 'Reusable modal content for focused tasks and decisions.'; showModal({ title: 'Modal example', icon: 'info', content, actions: [{ label: 'Close', className: 'btn-primary', run: (close) => close() }] }); });
+    const loadingModalButton = createButton({ label: 'Open loading modal', className: 'btn-secondary', symbol: 'action' }); loadingModalButton.addEventListener('click', () => { const content = document.createElement('p'); content.textContent = 'The complete destination layout stays mounted beneath the full-modal loading state.'; const modal = showModal({ title: 'Loading modal example', icon: 'info', content, actions: [{ label: 'Close', className: 'btn-primary', run: (close) => close() }] }); void modal.runWithLoading(() => new Promise<void>((resolve) => window.setTimeout(resolve, 1_200)), 'Preparing content…'); }); overlayDemo.append(row(popoverButton, sidePopoverButton, modalButton, loadingModalButton)); grid(overlays).append(overlayDemo);
     const notificationDemo = demo('Job notifications', 'Unread status changes use the shared icon action and anchored notification list.');
     const notificationTrigger = createIconButton({ icon: 'notifications', label: 'Job notifications' }); notificationTrigger.classList.add('job-notifications-trigger');
     const notificationCount = document.createElement('span'); notificationCount.className = 'job-notifications-count'; notificationTrigger.appendChild(notificationCount);
     const now = new Date().toISOString();
     const notificationControl = createJobNotifications({ trigger: notificationTrigger, count: notificationCount, loadJobs: async () => [{ id: 'showcase-job', type: 'build', name: 'Build development Android', action: 'Build', sourceUrl: '/ui', status: 'running', progress: 42, startedAt: now, tasks: [], logs: [], errorLogs: [] }], onOpenJob: () => undefined, onOpenAll: () => undefined });
     void notificationControl.refresh(); notificationDemo.append(row(notificationTrigger)); grid(overlays).append(notificationDemo);
+    const toastDemo = demo('Toasts', 'Completed actions use transient success feedback. Errors remain until closed and offer copyable technical details.');
+    const successToastButton = createButton({ label: 'Show success toast', className: 'btn-secondary', symbol: 'check' });
+    successToastButton.addEventListener('click', () => showSuccessToast('Configurations saved', 'Deployment configuration is up to date.'));
+    const errorToastButton = createButton({ label: 'Show error toast', className: 'btn-secondary', symbol: 'action' });
+    errorToastButton.addEventListener('click', () => showErrorToast('Could not save configuration', 'The configuration could not be updated.', 'Error: Example technical detail\n    at saveConfiguration (configurations.ts:42)'));
+    toastDemo.append(row(successToastButton, errorToastButton)); grid(overlays).append(toastDemo);
 
     options.content.append(theme, buttons, text, numeric, content, choices, panels, forms, overlays);
 }

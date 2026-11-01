@@ -1,7 +1,7 @@
 {
   "name": "cocos-build-dashboard-bridge",
   "version": "1.1.0",
-  "description": "Lets Cocos Build Dashboard queue builds in an open Cocos Creator 2.x Editor.",
+  "description": "Lets HayHay Dev Tools queue builds in an open Cocos Creator 2.x Editor.",
   "author": "HayHay",
   "main": "main.js"
 }
