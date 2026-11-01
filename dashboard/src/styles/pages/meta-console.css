@@ -1,0 +1,32 @@
+.facebook-console-page-content { display:flex; min-width:0; min-height:0; flex:1 1 auto; flex-direction:column; gap:var(--panel-stack-gap); }
+.facebook-console-overview { display:grid; gap:var(--panel-stack-gap); }
+.facebook-console-browser-workspace { display:grid; min-width:0; min-height:640px; grid-template-columns:minmax(0,1fr) 340px; gap:var(--panel-stack-gap); }
+.facebook-console-assets-library:has(> .facebook-console-assets-panel[hidden]) { display:none; }
+.facebook-console-browser-workspace:has(> .facebook-console-assets-library > .facebook-console-assets-panel[hidden]) { grid-template-columns:minmax(0,1fr); }
+.facebook-console-assets-library { display:grid; min-width:0; min-height:0; }
+.facebook-console-browser-shell { display:grid; min-height:640px; grid-template-rows:auto minmax(0,1fr); }
+.facebook-console-browser-shell > .ui-panel-body { min-height:0; padding:0; overflow:hidden; }
+.facebook-console-browser-content { display:grid; min-height:100%; height:100%; grid-template-rows:auto auto minmax(520px,1fr); }
+.facebook-console-browser-toolbar { display:grid; width:100%; min-width:0; align-items:center; grid-template-columns:auto auto auto auto minmax(180px,1fr) auto; gap:8px; }
+.facebook-console-browser-address { width:100%; }
+.facebook-console-browser-title { overflow:hidden; padding:7px 12px; border-bottom:1px solid var(--border); color:var(--text-muted); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }
+.facebook-console-browser-status { padding:9px 12px; border-bottom:1px solid var(--border); background:var(--accent-soft); color:var(--text); font-size:12px; line-height:1.4; overflow-wrap:anywhere; }
+.facebook-console-browser-status.is-success { color:var(--success); background:var(--success-soft); }
+.facebook-console-browser-status.is-error { color:var(--danger); background:var(--danger-soft); }
+.facebook-console-browser-viewport { min-width:0; min-height:520px; background:var(--surface-muted); }
+.facebook-console-forward .ui-icon { transform:rotate(180deg); }
+.facebook-console-assets-panel { display:grid; min-width:0; min-height:0; max-height:calc(100vh - 190px); align-self:stretch; grid-template-rows:auto minmax(0,1fr); }
+.facebook-console-assets-panel > .ui-panel-body { min-height:0; overflow:hidden; }
+.facebook-console-assets-content { display:grid; min-height:0; height:100%; grid-template-rows:auto minmax(0,1fr); gap:12px; }
+.facebook-console-assets-content.is-page { height:calc(100vh - 190px); align-items:start; grid-template-columns:minmax(0,1fr) clamp(220px,24vw,340px); grid-template-rows:minmax(0,1fr); gap:20px; }
+.facebook-console-assets-content.is-page > .facebook-console-asset-table-host { grid-column:1; grid-row:1; width:100%; min-width:0; overflow:hidden; }
+.facebook-console-assets-content.is-page > .facebook-console-asset-preview { position:sticky; top:0; grid-column:2; grid-row:1; min-width:0; height:auto; max-height:calc(100vh - 210px); align-items:center; justify-items:center; grid-template-rows:minmax(0,1fr) auto; }
+.facebook-console-assets-content.is-page > .facebook-console-asset-preview img,.facebook-console-assets-content.is-page > .facebook-console-asset-preview video { width:auto; max-width:100%; height:auto; max-height:min(64vh,620px); border:0; background:transparent; object-fit:contain; }
+.facebook-console-assets-content.is-page > .facebook-console-asset-preview .form-hint { width:100%; align-self:stretch; }
+.facebook-console-assets-content.is-page > .facebook-console-asset-preview-meta { justify-self:start; }
+.facebook-console-asset-preview { display:grid; gap:8px; }
+.facebook-console-asset-preview img,.facebook-console-asset-preview video { width:100%; max-height:220px; object-fit:contain; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2); }
+.facebook-console-asset-preview .form-hint { margin:0; padding:28px 12px; border:1px dashed var(--border); border-radius:var(--radius-sm); text-align:center; }
+.facebook-console-asset-preview-meta { min-height:18px; color:var(--text-muted); font-size:11px; line-height:1.4; overflow-wrap:anywhere; }
+.facebook-console-asset-list { min-height:0; overflow:auto; }
+@media (max-width:1100px) { .facebook-console-browser-workspace { grid-template-columns:minmax(0,1fr) 290px; } .facebook-console-assets-content.is-page { grid-template-columns:minmax(0,1fr) 240px; } }

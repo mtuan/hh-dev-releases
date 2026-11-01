@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Cocos Build Dashboard</title>
+    <script>try{const saved=localStorage.getItem('hayhay-tools:theme');const theme=saved==='light'||saved==='dark'?saved:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme}catch{document.documentElement.dataset.theme='dark'}</script>
+    <link rel="stylesheet" href="../dist/src/styles.css" />
+</head>
+<body class="is-booting">
+    <div id="startup-loading" role="status" aria-live="polite"><div class="startup-loading-mark">C</div><strong>Cocos Build Dashboard</strong><span>Restoring your workspace…</span></div>
+    <div id="app">
+        <header id="route-bar">
+            <input id="current-route" class="ui-field-input" type="text" aria-label="Current route" value="/projects" />
+            <button id="copy-route-btn" class="ui-icon-button" title="Copy route" aria-label="Copy route"></button>
+            <button id="refresh-route-btn" class="ui-icon-button" title="Refresh current page" aria-label="Refresh current page"></button>
+            <button id="job-notifications-btn" class="ui-icon-button job-notifications-trigger" title="Job notifications" aria-label="Job notifications"><span id="job-notifications-count" class="job-notifications-count" hidden></span></button>
+            <button id="theme-toggle-btn" class="ui-icon-button theme-toggle-button" title="Use light mode" aria-label="Use light mode"></button>
+        </header>
+        <header id="app-header">
+            <button id="global-back-btn" class="ui-icon-button ui-icon-button-ghost app-back-button" title="Go back" aria-label="Go back" disabled></button>
+            <div class="app-location">
+                <span id="app-header-eyebrow" class="panel-label">Location</span>
+                <nav id="app-breadcrumbs" class="app-breadcrumbs" aria-label="Breadcrumb"></nav>
+            </div>
+        </header>
+
+        <div id="workspace-shell">
+            <aside id="root-sidebar" class="root-sidebar" hidden>
+                <nav class="sidebar-navigation" aria-label="Application">
+                    <section class="nav-section">
+                        <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Development</div>
+                        <div class="nav-submenu">
+                            <button class="nav-item active" data-route="projects"><span class="icon" data-icon="projects"></span><span class="ui-sidebar-item-label">Projects</span></button>
+                            <button class="nav-item" data-route="jobs"><span class="icon" data-icon="build"></span><span class="ui-sidebar-item-label">Jobs</span></button>
+                            <div class="platform-tool-group">
+                                <div class="nav-tool-parent"><span class="icon" data-icon="users"></span><span class="ui-sidebar-item-label">Fake players</span></div>
+                                <div class="nav-submenu nav-submenu-nested">
+                                    <button class="nav-item" data-route="fake-players" data-fake-players-view="avatars"><span class="ui-sidebar-item-label">Avatars</span></button>
+                                    <button class="nav-item" data-route="fake-players" data-fake-players-view="player-infos"><span class="ui-sidebar-item-label">Player information</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="deploy-nav-item" class="nav-section" hidden>
+                        <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Admin</div>
+                        <div class="nav-submenu">
+                            <div class="platform-tool-group">
+                                <div class="nav-tool-parent"><span class="icon" data-icon="lock"></span><span class="ui-sidebar-item-label">Deploy</span></div>
+                                <div class="nav-submenu nav-submenu-nested">
+                                    <button class="nav-item" data-route="deploy" data-deploy-view="configurations"><span class="ui-sidebar-item-label">Configurations</span></button>
+                                    <button class="nav-item" data-route="deploy" data-deploy-view="builds"><span class="ui-sidebar-item-label">Builds</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="nav-section">
+                        <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Reference</div>
+                        <div class="nav-submenu">
+                            <button class="nav-item" data-route="ui"><span class="icon" data-icon="setup"></span><span class="ui-sidebar-item-label">UI components</span></button>
+                        </div>
+                    </section>
+                    <section class="nav-section">
+                        <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Application</div>
+                        <div class="nav-submenu">
+                            <button class="nav-item" data-route="settings"><span class="icon" data-icon="settings"></span><span class="ui-sidebar-item-label">Settings</span></button>
+                        </div>
+                    </section>
+                </nav>
+            </aside>
+            <aside id="project-panel">
+                <nav id="tool-navigation" class="sidebar-navigation" aria-label="Platform navigation">
+                    <section class="nav-section">
+                        <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Development</div>
+                        <div class="nav-submenu">
+                            <button class="nav-item active" data-route="build"><span class="icon" data-icon="build"></span><span class="ui-sidebar-item-label">Build</span></button>
+                            <div id="facebook-console-nav" class="platform-tool-group" hidden>
+                                <div class="nav-tool-parent"><span class="icon" data-icon="globe"></span><span class="ui-sidebar-item-label">Meta console</span></div>
+                                <div class="nav-submenu nav-submenu-nested">
+                                    <button class="nav-item" data-route="facebook-console"><span class="ui-sidebar-item-label">Overview</span></button>
+                                    <button class="nav-item" data-route="facebook-console-browser"><span class="ui-sidebar-item-label">Browser</span></button>
+                                    <button class="nav-item" data-route="facebook-console-assets"><span class="ui-sidebar-item-label">Assets</span></button>
+                                </div>
+                            </div>
+                            <button class="nav-item" data-route="platform-loading"><span class="icon" data-icon="loading"></span><span class="ui-sidebar-item-label">Loading Designer</span></button>
+                        </div>
+                    </section>
+                    <section class="nav-section settings-nav-section">
+                        <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Settings</div>
+                        <div class="nav-submenu">
+                            <button class="nav-item" data-route="platform-configs"><span class="icon" data-icon="settings"></span><span class="ui-sidebar-item-label">Configurations</span></button>
+                        </div>
+                    </section>
+                </nav>
+            </aside>
+
+            <main id="projects-page" class="tool-page route-content" data-page="projects" hidden>
+                <header id="projects-page-header"></header>
+                <section id="project-list" class="projects-card"></section>
+            </main>
+
+            <main id="fake-players-page" class="tool-page route-content" data-page="fake-players" hidden>
+                <header id="fake-players-page-header"></header>
+                <section id="fake-players-page-content"></section>
+            </main>
+
+            <main id="ui-page" class="tool-page route-content" data-page="ui" hidden>
+                <header id="ui-page-header"></header>
+                <section id="ui-showcase-content" class="ui-showcase-content"></section>
+            </main>
+
+            <main id="jobs-page" class="tool-page route-content" data-page="jobs" hidden>
+                <header id="jobs-page-header"></header>
+                <section id="jobs-page-content" class="jobs-page-content"></section>
+            </main>
+
+            <main id="job-detail-page" class="tool-page route-content" data-page="job-detail" hidden>
+                <header id="job-detail-page-header"></header>
+                <section id="job-detail-page-content" class="job-detail-page-content"></section>
+            </main>
+
+            <main id="settings-page" class="tool-page route-content" data-page="settings" hidden>
+                <header id="settings-page-header"></header>
+                <section id="settings-page-content" class="settings-page-content"></section>
+            </main>
+
+            <main id="deploy-page" class="tool-page route-content" data-page="deploy" hidden>
+                <header id="deploy-page-header"></header>
+                <section id="deploy-page-content" class="deploy-page-content"></section>
+            </main>
+
+            <main id="not-found-page" class="tool-page route-content" data-page="not-found" hidden>
+                <header id="not-found-page-header"></header>
+                <section id="not-found-page-content" class="not-found-page-content"></section>
+            </main>
+
+            <div id="project-settings-layout" class="tool-page project-settings-layout" hidden>
+                <aside class="settings-sidebar">
+                    <nav class="sidebar-navigation" aria-label="Project navigation">
+                        <section class="nav-section">
+                            <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Development</div>
+                            <div class="nav-submenu">
+                                <button class="settings-nav-item" data-route="project"><span class="icon" data-icon="info"></span><span class="settings-nav-label">Info</span></button>
+                                <button class="settings-nav-item" data-route="platforms"><span class="icon" data-icon="platforms"></span><span class="settings-nav-label">Platforms</span></button>
+                                <button class="settings-nav-item" data-route="loading"><span class="icon" data-icon="loading"></span><span class="settings-nav-label">Loading Designer</span></button>
+                            </div>
+                        </section>
+                        <section class="nav-section">
+                            <div class="nav-parent platform-nav-heading ui-sidebar-section-label">Settings</div>
+                            <div class="nav-submenu">
+                                <button class="settings-nav-item" data-route="configs"><span class="icon" data-icon="setup"></span><span class="settings-nav-label">Configurations</span></button>
+                            </div>
+                        </section>
+                    </nav>
+                </aside>
+                <main id="project-info-page" class="settings-content route-content" data-page="project">
+                    <header id="project-info-page-header"></header>
+                    <section id="project-info-card" class="projects-card"></section>
+                </main>
+                <main id="project-setup-page" class="settings-content route-content" data-page="configs" hidden>
+                    <header id="project-setup-page-header"></header>
+                    <section id="project-setup-list" class="projects-card"></section>
+                </main>
+                <main id="platforms-page" class="settings-content route-content" data-page="platforms" hidden>
+                    <header id="platforms-page-header"></header>
+                    <section id="platform-manage-list" class="projects-card"></section>
+                </main>
+                <main id="loading-screen-page" class="settings-content route-content" data-page="loading" hidden>
+                    <header id="loading-screen-page-header"></header>
+                    <section id="loading-screen-content"></section>
+                </main>
+            </div>
+
+            <main id="platform-configs-page" class="tool-page route-content" data-page="platform-configs" hidden>
+                <header id="platform-configs-page-header"></header>
+                <section class="projects-card"><ul id="platform-configs-list" class="settings-panel-list"></ul></section>
+            </main>
+
+            <main id="platform-loading-page" class="tool-page route-content" data-page="platform-loading" hidden>
+                <header id="platform-loading-page-header"></header>
+                <section id="platform-loading-content"></section>
+            </main>
+
+            <main id="facebook-console-page" class="tool-page route-content" data-page="facebook-console" hidden>
+                <header id="facebook-console-page-header"></header>
+                <section id="facebook-console-page-content" class="facebook-console-page-content"></section>
+            </main>
+
+            <main id="build-panel" class="tool-page route-content" data-page="build">
+                <header id="build-page-header"></header>
+
+            <div id="bridge-warning" class="bridge-warning" hidden>
+                <span id="bridge-warning-text"></span>
+                <span id="bridge-fix-btn"></span>
+            </div>
+            <div id="tooling-warning" class="bridge-warning" hidden>
+                <span id="tooling-warning-text"></span>
+                <span id="tooling-fix-btn"></span>
+            </div>
+
+            <section class="page-section single-page-section" id="profile-section">
+                <ul id="profile-list"></ul>
+            </section>
+
+            <section class="page-section" id="jobs-section" hidden>
+                <h2>Jobs</h2>
+                <ul id="job-list" class="ui-action-list"></ul>
+            </section>
+
+            <section class="page-section page-section-grow" id="log-section" hidden>
+                <h2>Log</h2>
+                <pre id="log-output"></pre>
+            </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="../dist/src/app.js"></script>
+</body>
+</html>

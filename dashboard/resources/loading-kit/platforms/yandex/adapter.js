@@ -1,0 +1,1 @@
+window.CocosPlatform = { initialize: async function(){ if(window.YaGames){ window.ysdk=await YaGames.init(); } }, reportProgress: function(p,m){ window.CocosWebLoading.setProgress(p,m); }, startGame: async function(){ if(window.ysdk&&window.ysdk.features&&window.ysdk.features.LoadingAPI){ window.ysdk.features.LoadingAPI.ready(); } } };

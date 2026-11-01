@@ -1,0 +1,51 @@
+<View
+    style="width: 750px; height: 750px; position: relative; background-color: white; overflow: hidden;">
+
+    <For source="{{avatars}}" itemName="avatar">
+        <View
+            style="
+            position: absolute; 
+            left: {{avatar.x}}; 
+            bottom: {{avatar.y}};
+            width: {{avatar.size}};
+            height: {{avatar.size}};
+            transform: translate(-50%, 50%) rotate({{avatar.angle}});
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+            ">
+
+            <Image
+                src="{{FBInstant.players[{{avatar.photo}}].photo}}"
+                style="width: 100%; height: 100%;object-fit: cover;object-position: 50% 50%;" />
+
+        </View>
+    </For>
+    <For source="{{avatars_fake}}" itemName="avatar">
+        <View
+            style="
+            position: absolute; 
+            left: {{avatar.x}}; 
+            bottom: {{avatar.y}};
+            width: {{avatar.size}};
+            height: {{avatar.size}};
+            transform: translate(-50%, 50%) rotate({{avatar.angle}});
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1;
+            ">
+
+            <Image
+                src="{{avatar.photo}}"
+                style="width: 100%; height: 100%;object-fit: cover;object-position: 50% 50%;" />
+
+        </View>
+    </For>
+
+    <Image
+        src="{{bgImage}}"
+        style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 2;" />
+
+</View>

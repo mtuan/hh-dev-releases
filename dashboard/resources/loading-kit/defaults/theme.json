@@ -1,0 +1,9 @@
+{
+  "background": "#10141c",
+  "progressFill": "#4b92ff",
+  "progressTrack": "rgba(255,255,255,0.25)",
+  "message": "Loading…",
+  "showPercentage": true,
+  "animation": "pulse",
+  "transitionDuration": 300
+}

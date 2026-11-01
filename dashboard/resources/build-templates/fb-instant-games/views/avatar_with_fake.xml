@@ -1,0 +1,44 @@
+<View
+  style="
+      width: 100%; 
+      height: 100%; 
+      margin: -5px; 
+      display: flex; 
+      flex-direction: row; 
+      align-items: center; 
+      background: transparent;
+  ">
+  <If>
+    <Condition lhs="{{playerID}}" operator="GREATER_THAN" rhs="100" />
+      <View>
+        <Image className="noselect" src="{{FBInstant.players[{{playerID}}].photo}}"
+          style="
+              width: 100%;
+              height: 100%;
+              margin: 0px;
+              border-radius: 5px;
+              object-fit: cover;
+              object-position: 50% 50%;
+              position: absolute;
+              z-index: 0;left: 0px;
+              top: 0px;transform: none;
+          " />
+      </View>
+    <Else>
+      <View>
+        <Image className="noselect" src="../images/avatars/a{{playerID}}.jpg"
+          style="
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            border-radius: 5px;
+            object-fit: cover;
+            object-position: 50% 50%;
+            position: absolute;
+            z-index: 0;left: 0px;
+            top: 0px;transform: none;
+        " />
+      </View>
+    </Else>
+  </If>
+</View>

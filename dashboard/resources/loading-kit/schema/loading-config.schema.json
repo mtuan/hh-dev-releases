@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cocos loading kit configuration",
+  "type": "object",
+  "required": ["version", "gameScene", "theme", "platforms"],
+  "properties": {
+    "version": { "const": 1 },
+    "gameScene": { "type": "string", "minLength": 1 },
+    "theme": { "type": "string", "minLength": 1 },
+    "platforms": { "type": "object", "additionalProperties": { "type": "object" } }
+  },
+  "additionalProperties": true
+}

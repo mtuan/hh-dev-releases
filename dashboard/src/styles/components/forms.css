@@ -1,0 +1,69 @@
+/* ---------- Forms ---------- */
+:where(input[type='text'],input[type='password'],input[type='number'],input[type='email'],input:not([type]),select) {
+    appearance:none;
+    -webkit-appearance:none;
+    display:block;
+    width:100%;
+    height:var(--control-height);
+    padding:6px 8px;
+    color:var(--text);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    box-shadow:none;
+    font:inherit;
+    line-height:18px;
+}
+:where(input[type='checkbox']) { accent-color:var(--accent-hover); }
+:where(select) { padding-right:30px; }
+.ui-field [aria-invalid='true'] { border-color:var(--danger) !important; box-shadow:0 0 0 2px var(--danger-soft) !important; }
+
+.toggle-control {
+    display: inline-flex;
+    min-height: var(--control-height);
+    align-items: center;
+    gap: 8px;
+}
+
+.inline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.inline-form .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.inline-form .field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.form-hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.inline-form .path-row {
+    display: flex;
+    gap: 6px;
+}
+
+.inline-form .path-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.inline-form input[readonly] {
+    background: var(--surface-3);
+    color: var(--text-muted);
+}

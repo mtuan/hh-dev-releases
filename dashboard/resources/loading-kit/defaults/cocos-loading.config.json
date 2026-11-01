@@ -1,0 +1,13 @@
+{
+  "$schema": "./loading/loading-config.schema.json",
+  "version": 1,
+  "gameScene": "Game",
+  "theme": "./loading/theme.json",
+  "platforms": {
+    "web-mobile": { "adapter": "web" },
+    "web-desktop": { "adapter": "web" },
+    "fb-instant-games": { "adapter": "facebook-instant" },
+    "android": { "adapter": "native" },
+    "ios": { "adapter": "native" }
+  }
+}

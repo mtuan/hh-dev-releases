@@ -1,0 +1,8 @@
+{
+  "name": "cocos-build-dashboard-bridge",
+  "version": "1.1.0",
+  "package_version": 2,
+  "author": "HayHay",
+  "description": "Lets Cocos Build Dashboard queue builds in the already-open Cocos Creator Editor.",
+  "main": "./dist/main.js"
+}

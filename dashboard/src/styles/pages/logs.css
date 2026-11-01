@@ -1,0 +1,43 @@
+/* ---------- Log ---------- */
+#log-output {
+    flex: 1;
+    margin: 0;
+    padding: 10px 12px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--code-text);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.log-line-error {
+    color: var(--danger);
+}
+
+.log-line-warn {
+    color: var(--warning);
+}
+
+.log-job {
+    color: var(--text-muted);
+}
+
+.technical-error-content { display: flex; flex-direction: column; gap: 14px; }
+.technical-error-content p { margin: 0; color: var(--text-muted); }
+.technical-error-details {
+    max-height: 260px;
+    margin: 0;
+    padding: 12px;
+    overflow: auto;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    white-space: pre-wrap;
+    user-select: text;
+}

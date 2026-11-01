@@ -1,0 +1,7 @@
+{
+  "family": "3.x",
+  "buildMode": "editor-or-headless",
+  "editorBridge": true,
+  "bootstrap": ["index.html", "index.js", "application.js"],
+  "notes": "Preserve generated import maps and application.js references when applying platform integrations."
+}

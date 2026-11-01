@@ -1,0 +1,46 @@
+{
+  "name": "cocos-build-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "author": "HayHay",
+  "description": "Electron UI to run Cocos Creator headless CLI builds across multiple projects and platforms.",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "build": "npm run check:ui:all && npm run build:loading-runtime && tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && npm run build:renderer",
+    "build:renderer": "node scripts/build-renderer.mjs",
+    "check:ui": "node scripts/check-ui-conventions.mjs",
+    "check:ui:all": "node scripts/check-ui-conventions.mjs --all",
+    "build:loading-runtime": "esbuild resources/loading-kit/web/loading-graph-entry.js --bundle --platform=browser --format=iife --outfile=resources/loading-kit/web/loading-graph.js",
+    "start": "npm run build && env -u ELECTRON_RUN_AS_NODE electron .",
+    "dev": "node scripts/dev.mjs",
+    "watch": "npm run dev",
+    "dev:update:start": "node scripts/dev-update.mjs start",
+    "dev:update:finish": "node scripts/dev-update.mjs finish",
+    "package": "npm run build && electron-builder --config electron-builder.config.cjs",
+    "package:mac": "npm run build && electron-builder --config electron-builder.config.cjs --mac --x64 --arm64",
+    "package:win": "npm run build && electron-builder --config electron-builder.config.cjs --win --x64",
+    "release": "npm run build && electron-builder --config electron-builder.config.cjs --publish always",
+    "cli": "npm run build && node dist/cli/index.js"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/libsodium-wrappers": "^0.7.14",
+    "@types/node": "^20.0.0",
+    "concurrently": "^9.1.2",
+    "electron": "^32.0.0",
+    "electron-builder": "^26.18.0",
+    "electronmon": "^2.0.3",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "electron-updater": "^6.8.11",
+    "libsodium-wrappers": "^0.8.4"
+  },
+  "electronmon": {
+    "patterns": [
+      "!**/*"
+    ]
+  }
+}

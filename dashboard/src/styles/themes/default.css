@@ -1,0 +1,109 @@
+@font-face { font-family:'HayHay Lilita One'; src:url('../../../resources/loading-kit/web/fonts/LilitaOne-Regular.ttf') format('truetype'); font-style:normal; font-weight:400; font-display:swap; }
+@font-face { font-family:'HayHay Titan One'; src:url('../../../resources/loading-kit/web/fonts/TitanOne-Regular.ttf') format('truetype'); font-style:normal; font-weight:400; font-display:swap; }
+@font-face { font-family:'HayHay Bungee'; src:url('../../../resources/loading-kit/web/fonts/Bungee-Regular.ttf') format('truetype'); font-style:normal; font-weight:400; font-display:swap; }
+@font-face { font-family:'HayHay Baloo 2'; src:url('../../../resources/loading-kit/web/fonts/Baloo2-wght.ttf') format('truetype'); font-style:normal; font-weight:400 800; font-display:swap; }
+
+/* ---------- Design tokens ---------- */
+:root {
+    color-scheme: dark;
+    --bg: #17181b;
+    --surface: #202226;
+    --surface-2: #272a2f;
+    --surface-3: #30343a;
+    --border: #33363c;
+    --text: #e6e8eb;
+    --text-muted: #9097a1;
+    --accent: #3a6ea5;
+    --accent-hover: #4a82bd;
+    --on-accent:#ffffff;
+    --success: #4cc38a;
+    --warning: #e5b94a;
+    --danger: #e5675f;
+    --route-bg: #141518;
+    --control-hover: #3a3f46;
+    --code-bg: #0f1012;
+    --code-text: #b8bec7;
+    --link: #a9c9eb;
+    --link-hover: #d5e8fa;
+    --accent-soft:rgba(74,130,189,.22);
+    --accent-border:rgba(74,130,189,.42);
+    --selected-text:#ffffff;
+    --focus-ring:rgba(74,130,189,.25);
+    --success-soft:rgba(76,195,138,.15);
+    --warning-soft:rgba(229,185,74,.15);
+    --warning-border:rgba(229,185,74,.35);
+    --danger-soft:rgba(229,103,95,.15);
+    --danger-border:rgba(229,103,95,.5);
+    --info-soft:rgba(58,110,165,.2);
+    --info-text:#8db8e6;
+    --overlay:rgba(0,0,0,.6);
+    --shadow:rgba(0,0,0,.55);
+    --swatch-border:rgba(255,255,255,.22);
+    --swatch-inset:rgba(0,0,0,.12);
+    --radius: 8px;
+    --radius-sm: 5px;
+    --sidebar-width: 230px;
+    --sidebar-padding-x: 14px;
+    --sidebar-padding-y: 20px;
+    --page-gutter-x: 24px;
+    --page-gutter-y: 20px;
+    --page-header-gap: 24px;
+    --page-content-gap: 18px;
+    --panel-stack-gap: 12px;
+    --page-title-size: 22px;
+    --page-description-gap: 5px;
+    --control-height-sm:32px;
+    --control-height-md:40px;
+    --control-height-lg:48px;
+    --control-height-xl:56px;
+    --control-font-size-sm:13px;
+    --control-font-size-md:14px;
+    --control-font-size-lg:15px;
+    --control-font-size-xl:16px;
+    --control-choice-size-sm:18px;
+    --control-choice-size-md:20px;
+    --control-choice-size-lg:22px;
+    --control-choice-size-xl:24px;
+    --control-height:var(--control-height-md);
+    --control-font-size:var(--control-font-size-md);
+    --control-choice-size:var(--control-choice-size-md);
+    --font-mono: 'SF Mono', Menlo, Consolas, monospace;
+}
+
+:root[data-theme='light'] {
+    color-scheme: light;
+    --bg:#f3f5f8;
+    --surface:#ffffff;
+    --surface-2:#f7f8fa;
+    --surface-3:#e6e9ee;
+    --border:#d4d9e1;
+    --text:#20242b;
+    --text-muted:#68717e;
+    --accent:#3378bd;
+    --accent-hover:#2469ac;
+    --on-accent:#ffffff;
+    --success:#25845b;
+    --warning:#a86d00;
+    --danger:#c9473f;
+    --route-bg:#e9edf2;
+    --control-hover:#dde2e8;
+    --code-bg:#20242b;
+    --code-text:#e8ecf1;
+    --link:#2469ac;
+    --link-hover:#174f85;
+    --accent-soft:rgba(51,120,189,.14);
+    --accent-border:rgba(51,120,189,.34);
+    --selected-text:#174f85;
+    --focus-ring:rgba(51,120,189,.2);
+    --success-soft:rgba(37,132,91,.12);
+    --warning-soft:rgba(168,109,0,.12);
+    --warning-border:rgba(168,109,0,.32);
+    --danger-soft:rgba(201,71,63,.1);
+    --danger-border:rgba(201,71,63,.38);
+    --info-soft:rgba(36,105,172,.12);
+    --info-text:#2469ac;
+    --overlay:rgba(25,31,40,.38);
+    --shadow:rgba(32,36,43,.2);
+    --swatch-border:rgba(32,36,43,.2);
+    --swatch-inset:rgba(32,36,43,.1);
+}

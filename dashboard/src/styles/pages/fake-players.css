@@ -1,0 +1,19 @@
+.header-actions { position: relative; }
+.platform-menu-list { width:240px; }
+
+.fake-players-content { min-width: 0; }
+.fake-player-avatar-preview {
+    display: block;
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+}
+.fake-player-toolbar { display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+.fake-player-toolbar .ui-dropdown { width:160px; }
+.fake-player-avatar-card { position:relative; display:grid; place-items:center; min-width:0; aspect-ratio:1; padding:10px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); }
+.fake-player-avatar-card > img { width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); background:var(--surface-2); }
+.fake-player-avatar-card > button { position:absolute; top:8px; right:8px; opacity:0; transition:opacity .12s ease; }
+.fake-player-avatar-card:hover > button,.fake-player-avatar-card:focus-within > button { opacity:1; }

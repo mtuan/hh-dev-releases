@@ -1,0 +1,17 @@
+.jobs-page-content,.job-detail-page-content { display:flex; flex-direction:column; padding-top:var(--page-content-gap); padding-bottom:32px; }
+.jobs-page-content { gap:var(--page-content-gap); }
+.job-detail-page-content { gap:var(--panel-stack-gap); }
+.job-task-list { display:flex; flex-direction:column; gap:10px; margin:0; padding:0; list-style:none; }
+.job-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:0; }
+.job-summary-grid > div { min-width:0; }
+.job-summary-grid dt { color:var(--text-muted); font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+.job-summary-grid dd { margin:5px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+.job-task-list li { display:grid; grid-template-columns:minmax(170px,1fr) minmax(180px,2fr) 84px; align-items:center; gap:16px; }
+.job-task-list li > div { display:flex; min-width:0; flex-direction:column; gap:3px; }
+.job-task-list li > div span { color:var(--text-muted); font-size:11px; }
+.job-task-list progress { width:100%; height:8px; accent-color:var(--accent); }
+.job-task-list .badge { justify-self:end; }
+.job-log-shell { display:flex; min-height:260px; flex-direction:column; gap:10px; }
+.job-log-actions { display:flex; justify-content:flex-end; gap:8px; }
+.job-detail-logs { min-height:240px; max-height:55vh; margin:0; padding:14px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--code-text); background:var(--code-bg); font:11px/1.55 var(--font-mono); white-space:pre-wrap; word-break:break-word; }
+@media (max-width:900px) { .job-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }

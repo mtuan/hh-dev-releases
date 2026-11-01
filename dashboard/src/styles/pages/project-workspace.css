@@ -1,0 +1,199 @@
+.build-config-required-content > p { margin: 0 0 14px; color: var(--text); line-height: 1.5; }
+.build-config-required-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.build-config-required-list li { position: relative; padding-left: 18px; color: var(--text); line-height: 1.45; }
+.build-config-required-list li::before { position: absolute; left: 2px; content: '•'; color: var(--warning); }
+
+.project-switch {
+    width: 100%;
+    justify-content: space-between;
+    padding: 9px 10px;
+    text-align: left;
+    background: var(--surface-2);
+}
+
+.project-switch-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.project-switch-copy .panel-label {
+    padding: 0;
+}
+
+#sidebar-project-name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chevron {
+    transition: transform 0.15s ease;
+}
+
+[aria-expanded='true'] > .chevron {
+    transform: rotate(180deg);
+}
+
+#project-switch-menu {
+    padding: 5px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+#project-switch-menu[hidden],
+.nav-submenu[hidden] {
+    display: none;
+}
+
+.sidebar-navigation {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 0;
+}
+
+.all-projects-link {
+    justify-content: flex-start;
+    margin-top: auto;
+    color: var(--text-muted);
+    background: transparent;
+    border-color: transparent;
+}
+
+.nav-divider {
+    height: 1px;
+    margin: 5px 8px;
+    background: var(--border);
+}
+
+.nav-section,
+.nav-submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nav-parent,
+.nav-item {
+    width: 100%;
+    justify-content: flex-start;
+    border-color: transparent;
+    background: transparent;
+}
+
+.nav-parent {
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.platform-nav-heading {
+    display: flex;
+    padding: 0 10px 5px;
+}
+
+.nav-item {
+    padding: 8px 10px;
+}
+
+.nav-item.active {
+    color:var(--selected-text);
+    background:var(--accent-soft);
+    border-color:var(--accent-border);
+}
+.platform-tool-group { display:grid; gap:2px; }
+.nav-tool-parent { display:flex; align-items:center; gap:10px; padding:8px 10px 4px; color:var(--text); font-weight:400; }
+.nav-tool-parent .icon { color:var(--text-muted); }
+.nav-submenu-nested { margin-left:28px; padding-left:8px; border-left:1px solid var(--border); }
+.nav-submenu-nested .nav-item { padding-block:6px; }
+
+.nav-soon {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+}
+
+.workspace-context {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 6px 0 14px;
+    padding: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.workspace-context[hidden] { display: none; }
+.workspace-context .panel-label { padding: 0; }
+#context-project-name, .context-platform { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.context-platform { color:var(--info-text); font-family: var(--font-mono); font-size: 11px; }
+.context-manage {
+    justify-content: flex-start;
+    margin: 5px -4px -4px;
+    padding: 5px 4px;
+    color: var(--text-muted);
+    background: transparent;
+    border-color: transparent;
+    font-size: 11px;
+}
+
+.panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 4px;
+}
+
+#project-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#active-project-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.header-actions > .custom-dropdown { width:max-content; min-width:170px; max-width:260px; flex:0 1 auto; }
+.header-actions > .custom-dropdown .custom-dropdown-trigger { min-width:170px; }
+
+.bridge-warning {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 12px;
+    color: var(--warning);
+    background:var(--warning-soft);
+    border:1px solid var(--warning-border);
+    border-radius: var(--radius);
+    font-size: 12px;
+}
+
+.bridge-warning[hidden] {
+    display: none;
+}

@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "packages": {
+    "dashboardBridge": "1.1.0",
+    "loadingKit": "1.1.0",
+    "previewSimulator": "1.1.0"
+  }
+}

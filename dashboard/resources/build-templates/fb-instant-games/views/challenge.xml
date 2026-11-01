@@ -1,0 +1,27 @@
+<View>
+  <Image className="noselect" src="{{FBInstant.players[{{playerID}}].photo}}"
+    style="
+        width: 83%;
+        height: 84%;
+        margin: 0px;
+        border-radius: 50%;
+        object-fit: cover;
+        z-index: 1;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        "
+  />
+  <Image
+    src="../images/ic_challenge.png"
+    style="
+            width: 25px;
+            height: 25px;
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+        "
+  />
+</View>

@@ -1,0 +1,4 @@
+.settings-page-content { padding-top:var(--page-content-gap); padding-bottom:32px; }
+.settings-page-content .settings-panel-list { max-width:920px; }
+.settings-value { display:flex; min-height:var(--field-height); align-items:center; color:var(--text); font-weight:600; }
+.settings-update-error { margin:0; color:var(--danger); white-space:pre-wrap; overflow-wrap:anywhere; }

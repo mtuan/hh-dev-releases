@@ -1,0 +1,3 @@
+   <View style="width: 100%; height: 100%; margin: -5px; display: flex; flex-direction: row; align-items: center; background: transparent;">
+    <Image className="noselect" src="{{FBInstant.players[{{playerID}}].photo}}" style="width: 100%;height: 100%;margin: 0px;border-radius: 50%;object-fit: cover;object-position: 50% 50%;position: absolute;z-index: 0;left: 0px;top: 0px;transform: none;" />
+  </View>

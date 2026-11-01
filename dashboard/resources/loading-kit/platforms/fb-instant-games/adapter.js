@@ -1,0 +1,1 @@
+window.CocosPlatform = { initialize: async function(){ await FBInstant.initializeAsync(); this.reportProgress(10,'Connected to Facebook'); }, reportProgress: function(p,m){ window.CocosWebLoading.setProgress(p,m); FBInstant.setLoadingProgress(Math.floor(p)); }, startGame: async function(){ FBInstant.setLoadingProgress(100); await FBInstant.startGameAsync(); } };

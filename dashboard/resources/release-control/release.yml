@@ -1,0 +1,121 @@
+name: Release dashboard
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '.release-command.json'
+      - 'dashboard/**'
+      - 'requests/builds/**'
+      - 'channels/production.json'
+
+permissions:
+  contents: write
+
+env:
+  CI_RELEASE: 'true'
+  RELEASE_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  command:
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.read.outputs.action }}
+      version: ${{ steps.read.outputs.version }}
+      channel: ${{ steps.read.outputs.channel }}
+      tag: ${{ steps.read.outputs.tag }}
+      platform: ${{ steps.read.outputs.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const command = JSON.parse(fs.readFileSync('.release-command.json', 'utf8'));
+          const output = process.env.GITHUB_OUTPUT;
+          for (const key of ['action', 'version', 'channel', 'tag', 'platform']) {
+            fs.appendFileSync(output, `${key}=${command[key] || ''}\n`);
+          }
+          NODE
+
+  macos:
+    needs: command
+    if: needs.command.outputs.action == 'build' && needs.command.outputs.platform == 'macos'
+    runs-on: macos-latest
+    defaults: { run: { working-directory: dashboard } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: dashboard/package-lock.json }
+      - run: npm ci
+      - run: npm version "${{ needs.command.outputs.version }}" --no-git-tag-version
+      - run: npm run package:mac
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: |
+            dashboard/release/*.dmg
+            dashboard/release/*.zip
+            dashboard/release/*.yml
+            dashboard/release/*.blockmap
+          if-no-files-found: error
+
+  windows:
+    needs: command
+    if: needs.command.outputs.action == 'build' && needs.command.outputs.platform == 'windows'
+    runs-on: windows-latest
+    defaults: { run: { working-directory: dashboard } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm, cache-dependency-path: dashboard/package-lock.json }
+      - run: npm ci
+      - run: npm version "${{ needs.command.outputs.version }}" --no-git-tag-version
+      - run: npm run package:win
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          WINDOWS_PUBLISHER_NAME: ${{ secrets.WINDOWS_PUBLISHER_NAME }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: |
+            dashboard/release/*.exe
+            dashboard/release/*.yml
+            dashboard/release/*.blockmap
+          if-no-files-found: error
+
+  publish-platform:
+    needs: [command, macos, windows]
+    if: always() && needs.command.outputs.action == 'build' && (needs.macos.result == 'success' || needs.windows.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { pattern: release-*, path: release, merge-multiple: true }
+      - name: Create or update the versioned release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        shell: bash
+        run: |
+          tag="${{ needs.command.outputs.tag }}"
+          if ! gh release view "$tag" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            args=(--repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Dashboard v${{ needs.command.outputs.version }}" --notes "Platform builds are uploaded independently by the dashboard.")
+            if [[ "${{ needs.command.outputs.channel }}" == "beta" ]]; then args+=(--prerelease); fi
+            gh release create "$tag" "${args[@]}"
+          fi
+          gh release upload "$tag" release/* --repo "${GITHUB_REPOSITORY}" --clobber
+
+  promote:
+    needs: command
+    if: needs.command.outputs.action == 'promote'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Select the production release
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: gh release edit "${{ needs.command.outputs.tag }}" --repo "${GITHUB_REPOSITORY}" --latest

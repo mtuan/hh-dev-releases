@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+data/projects.json
+*.log
+.dev-update-lock
+.dev-update-ready
+.dev-instance.json

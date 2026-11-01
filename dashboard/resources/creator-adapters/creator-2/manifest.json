@@ -1,0 +1,7 @@
+{
+  "family": "2.x",
+  "buildMode": "headless",
+  "editorBridge": false,
+  "bootstrap": ["index.html", "main.js"],
+  "notes": "Cocos Creator 2.x uses a separate legacy bootstrap and must never receive Creator 3.x application.js templates."
+}

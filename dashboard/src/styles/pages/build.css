@@ -1,0 +1,27 @@
+/* ---------- Lists ---------- */
+.template-status-section { display:flex; min-width:0; flex-direction:column; gap:18px; }
+.template-path { display: block; margin-top: 7px; padding: 9px 10px; overflow-wrap: anywhere; background: var(--surface-2); border-radius: var(--radius-sm); }
+.selectable-list-item { cursor: pointer; }
+.selectable-list-item input { flex: 0 0 auto; }
+.build-environment-content { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.build-environment-heading { display: flex; align-items: center; gap: 8px; }
+.build-environment-description { color: var(--text-muted); font-size: 11px; }
+
+.build-environment-body { display: flex; min-width: 0; flex-direction: column; gap: 14px; }
+.build-environment-metadata { display: grid; grid-template-columns: minmax(120px, .55fr) minmax(170px, .8fr) minmax(220px, 1.4fr); gap: 18px; }
+.build-environment-metadata > div { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.build-environment-metadata span { color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.build-environment-metadata strong, .build-environment-metadata code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.build-metadata-value { display: flex; align-items: center; height: 24px; line-height: 24px; }
+.build-failure-value { display: flex; align-items: center; gap: 6px; }
+.build-failure-value strong { color: var(--danger); }
+.build-copy-error-button { color: var(--text-muted); background: transparent; border-color: transparent; }
+.build-copy-error-button:hover:not(:disabled) { color: var(--text); background: var(--surface-3); }
+.build-environment-actions { display: flex; align-items: flex-start; justify-content: flex-end; flex-direction: row; gap: 8px; flex-shrink: 0; }
+.build-environment-actions button:not(.build-folder-button) { min-width: 112px; }
+.ui-choice-modal-list { min-width:min(420px,70vw); padding:4px; }
+.build-folder-button { width: var(--control-height); height: var(--control-height); padding: 0; }
+.build-progress-row { display: flex; align-items: center; gap: 10px; }
+.build-progress-row progress { flex: 1; height: 8px; accent-color: var(--accent); }
+.build-progress-row span { width: 36px; color: var(--text-muted); font: 11px var(--font-mono); text-align: right; }
+.build-progress-row .deployment-progress-label { width:auto; min-width:72px; }

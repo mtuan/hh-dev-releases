@@ -1,0 +1,29 @@
+<View
+  style="position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    overflow: hidden;
+    border-width: 0px;
+    display: flex;
+    align-items: center;">
+
+  <Text
+    style="
+    color: {{fontColor}};
+    font-size: {{fontSize}};
+    font-weight: {{fontWeight}};
+    font-family: {{fontFamily}};
+    text-align: {{textAlign}};
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;"
+    content="{{FBInstant.players[{{playerID}}].name}}"
+  >
+  </Text>
+</View>
