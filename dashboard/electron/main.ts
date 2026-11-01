@@ -3304,7 +3304,10 @@ function copyReleaseWorkflow(repositoryPath: string): void {
 }
 
 function commitAndPush(repositoryPath: string, branch: string, message: string, paths: string[], jobId?: string): void {
-    git(repositoryPath, ['add', '--', ...paths]);
+    const forced = paths.filter((entry) => entry === 'dashboard');
+    const regular = paths.filter((entry) => entry !== 'dashboard');
+    if (forced.length) git(repositoryPath, ['add', '--force', '--', ...forced]);
+    if (regular.length) git(repositoryPath, ['add', '--', ...regular]);
     const staged = spawnSync('git', ['diff', '--cached', '--quiet'], { cwd: repositoryPath }).status !== 0;
     if (!staged) return;
     git(repositoryPath, ['commit', '-m', message]);
@@ -3422,18 +3425,33 @@ ipcMain.handle('release:list-builds', async () => {
         const directory = path.join(requestsDirectory, platform); if (!fs.existsSync(directory)) return [];
         return fs.readdirSync(directory).filter((file) => file.endsWith('.json')).map((file) => ({ ...JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')) as { version: string; channel: import('./types').UpdateChannel; tag: string; createdAt: string }, platform }));
     });
-    const assetsByTag = new Map<string, string[]>();
+    const releasesByTag = new Map<string, { assets: string[]; publishedAt?: string }>();
     await Promise.all([...new Set(requests.map((request) => request.tag))].map(async (tag) => {
         try {
             const response = await fetch(`https://api.github.com/repos/${resolved.repository}/releases/tags/${encodeURIComponent(tag)}`, { headers: { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } });
             if (!response.ok) return;
-            const release = await response.json() as { assets?: Array<{ name?: string }> }; assetsByTag.set(tag, (release.assets ?? []).map((asset) => asset.name ?? ''));
+            const release = await response.json() as { assets?: Array<{ name?: string }>; published_at?: string };
+            releasesByTag.set(tag, { assets: (release.assets ?? []).map((asset) => asset.name ?? ''), publishedAt: release.published_at });
         } catch { /* A missing or unreachable release is not a completed platform build. */ }
     }));
-    return requests.flatMap((request): ReleaseBuild[] => {
-        const assets = assetsByTag.get(request.tag) ?? [];
+    type WorkflowRun = { status?: string; conclusion?: string | null; html_url?: string; head_commit?: { message?: string } };
+    let workflowRuns: WorkflowRun[] = [];
+    try {
+        const endpoint = `/repos/${resolved.repository}/actions/workflows/${encodeURIComponent(config.workflowFile || 'release.yml')}/runs?branch=${encodeURIComponent(resolved.branch)}&event=push&per_page=100`;
+        const auth = githubAutomationConfig(config).config;
+        if (auth) workflowRuns = (await githubRequest<{ workflow_runs?: WorkflowRun[] }>(auth, endpoint)).workflow_runs ?? [];
+        else {
+            const response = await fetch(`https://api.github.com${endpoint}`, { headers: { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } });
+            if (response.ok) workflowRuns = ((await response.json()) as { workflow_runs?: WorkflowRun[] }).workflow_runs ?? [];
+        }
+    } catch { /* Requests still remain visible if workflow status cannot be loaded. */ }
+    return requests.map((request): ReleaseBuild => {
+        const release = releasesByTag.get(request.tag); const assets = release?.assets ?? [];
         const platformAssets = assets.filter((name) => request.platform === 'macos' ? /\.(?:dmg|zip)$/i.test(name) : /\.exe$/i.test(name));
-        return platformAssets.length ? [{ id: `${request.tag}-${request.platform}`, tag: request.tag, version: request.version, name: `Dashboard v${request.version}`, platform: request.platform, channel: request.channel, createdAt: request.createdAt, url: `https://github.com/${resolved.repository}/releases/tag/${request.tag}`, production: request.tag === config.productionTag, assets: platformAssets.length }] : [];
+        const expectedMessage = `release: build dashboard ${request.platform} v${request.version}`;
+        const run = workflowRuns.find((candidate) => candidate.head_commit?.message?.split('\n')[0] === expectedMessage);
+        const failed = run?.status === 'completed' && Boolean(run.conclusion && run.conclusion !== 'success');
+        return { id: `${request.tag}-${request.platform}`, tag: request.tag, version: request.version, name: `Dashboard v${request.version}`, platform: request.platform, channel: request.channel, createdAt: request.createdAt, publishedAt: release?.publishedAt, url: `https://github.com/${resolved.repository}/releases/tag/${request.tag}`, production: request.tag === config.productionTag, assets: platformAssets.length, status: platformAssets.length ? 'ready' : failed ? 'failed' : 'building', workflowUrl: run?.html_url };
     });
 });
 ipcMain.handle('release:create-build', (_event, request: CreateReleaseBuildRequest) => runManagedOperation('build', `Build dashboard v${request.version}`, 'Queue signed release build', async (jobId) => {

@@ -1,8 +1,8 @@
 {
   "action": "build",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "channel": "stable",
-  "tag": "dashboard-v0.1.1",
+  "tag": "dashboard-v0.1.2",
   "platform": "macos",
-  "createdAt": "2026-11-01T00:50:41.046Z"
+  "createdAt": "2026-11-01T01:58:35.385Z"
 }

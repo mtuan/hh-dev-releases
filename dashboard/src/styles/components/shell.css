@@ -72,7 +72,6 @@
 .ui-action-list-item:hover,.ui-action-list-item:focus-visible { background:var(--control-hover); outline:none; }
 .ui-action-list-item.is-selected { border-color:var(--accent-border); background:var(--accent-soft); }
 .ui-action-list-item.is-highlighted { background:var(--accent-soft); }
-.ui-action-list-item.is-highlighted::before { content:''; width:6px; height:6px; flex:0 0 6px; background:var(--accent); border-radius:50%; }
 .ui-action-list-row { display:flex; min-width:0; align-items:center; gap:8px; overflow:hidden; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); }
 .ui-action-list-row > .ui-action-list-item { flex:1 1 auto; border-radius:0; }
 .ui-action-list-actions { display:flex; flex:0 0 auto; align-items:center; gap:6px; }

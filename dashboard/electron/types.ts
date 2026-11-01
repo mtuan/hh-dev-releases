@@ -255,6 +255,8 @@ export interface ReleaseBuild {
     production: boolean;
     assets: number;
     platform: ReleasePlatform;
+    status: 'building' | 'ready' | 'failed';
+    workflowUrl?: string;
 }
 export interface CreateReleaseBuildRequest { version: string; channel: UpdateChannel; platform: ReleasePlatform; }
 export interface ManagedJobProjectSnapshot { id: string; name: string; projectPath: string; orientation: ProjectOrientation; creatorExecutable: string; }
