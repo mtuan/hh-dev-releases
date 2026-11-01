@@ -16,9 +16,9 @@
     "watch": "npm run dev",
     "dev:update:start": "node scripts/dev-update.mjs start",
     "dev:update:finish": "node scripts/dev-update.mjs finish",
-    "package": "npm run build && electron-builder --config electron-builder.config.cjs",
-    "package:mac": "npm run build && electron-builder --config electron-builder.config.cjs --mac --x64 --arm64",
-    "package:win": "npm run build && electron-builder --config electron-builder.config.cjs --win --x64",
+    "package": "npm run build && electron-builder --config electron-builder.config.cjs --publish never",
+    "package:mac": "npm run build && electron-builder --config electron-builder.config.cjs --mac --x64 --arm64 --publish never",
+    "package:win": "npm run build && electron-builder --config electron-builder.config.cjs --win --x64 --publish never",
     "release": "npm run build && electron-builder --config electron-builder.config.cjs --publish always",
     "cli": "npm run build && node dist/cli/index.js"
   },

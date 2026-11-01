@@ -1,4 +1,4 @@
-import type { ReleaseBuild, ReleasePlatform, UpdateChannel } from '../../../electron/types';
+import type { ReleaseBuild, ReleaseBuildLoadProgress, ReleasePlatform, UpdateChannel } from '../../../electron/types';
 import { createDataTable } from '../../shared/ui/data-table';
 import { createDynamicForm } from '../../shared/ui/dynamic-form';
 import { createButton } from '../../shared/ui/fields';
@@ -8,6 +8,9 @@ import { showConfirm, showModal, showTechnicalError } from '../../shared/ui/moda
 import { renderPageHeader } from '../../shared/ui/page-header';
 import { createHelpSidebar } from '../../shared/ui/help-sidebar';
 import { createSetupGuide } from '../../shared/ui/setup-guide';
+
+let releaseBuildProgressSink: ((progress: ReleaseBuildLoadProgress) => void) | undefined;
+window.buildApi.onReleaseBuildsProgress((progress) => releaseBuildProgressSink?.(progress));
 
 function createBuildGuide(repository: string, platforms: string[]): import('../../shared/ui/help-sidebar').HelpSidebarContent {
     const content = createSetupGuide([
@@ -35,7 +38,7 @@ function createBuildGuide(repository: string, platforms: string[]): import('../.
     return { key: 'build-release-guide', title: 'Build and release', description: 'Complete each step in order.', content };
 }
 
-function badge(build: ReleaseBuild): HTMLElement { const value = document.createElement('span'); value.className = `badge ${build.status === 'failed' ? 'badge-failed' : build.status === 'building' ? 'badge-running' : build.production ? 'badge-success' : build.channel === 'beta' ? 'badge-warning' : 'badge-neutral'}`; value.textContent = build.status === 'failed' ? 'Failed' : build.status === 'building' ? 'Building' : build.production ? 'Production' : build.channel === 'beta' ? 'Beta' : 'Ready'; return value; }
+function badge(build: ReleaseBuild): HTMLElement { const value = document.createElement('span'); value.className = `badge ${build.status === 'building' ? 'badge-running' : build.production ? 'badge-success' : build.channel === 'beta' ? 'badge-warning' : 'badge-neutral'}`; value.textContent = build.status === 'building' ? 'Building' : build.production ? 'Production' : build.channel === 'beta' ? 'Beta' : 'Ready'; return value; }
 function versionParts(value: string): number[] { return value.split(/[.-]/).map((part) => Number.parseInt(part, 10) || 0); }
 function compareVersions(left: string, right: string): number { const a = versionParts(left); const b = versionParts(right); for (let index = 0; index < Math.max(a.length, b.length); index += 1) { const difference = (a[index] ?? 0) - (b[index] ?? 0); if (difference) return difference; } return 0; }
 type VersionIncrement = 'patch' | 'minor' | 'major';
@@ -80,19 +83,27 @@ export async function renderDeployBuilds(options: { header: HTMLElement; content
     const layout = document.createElement('div'); layout.className = 'deploy-config-layout';
     const stack = document.createElement('div'); stack.className = 'deploy-panel-stack'; stack.appendChild(table.element);
     const helpSidebar = createHelpSidebar(); layout.append(stack, helpSidebar.element); options.content.replaceChildren(layout);
-    const load = async (): Promise<void> => runWithLoadingState(options.content, async () => { builds = await window.buildApi.listReleaseBuilds(); table.setItems(builds); }, { label: 'Loading dashboard builds' });
-    options.header.querySelector<HTMLButtonElement>('#deploy-refresh-builds')?.addEventListener('click', () => void load().catch(showError));
+    const load = async (refresh = false): Promise<void> => runWithLoadingState(table.element, async (loading) => {
+        const requestId = crypto.randomUUID(); const startedAt = performance.now(); let phase = refresh ? 'Preparing refresh' : 'Preparing build list'; let phaseStartedAt = 0;
+        const elapsed = (): number => performance.now() - startedAt;
+        const update = (): void => { const total = elapsed(); loading.setLabel(`${phase} · ${(total / 1_000).toFixed(1)}s`); };
+        const timer = window.setInterval(update, 100); update();
+        console.info(`[release:list-builds:${requestId}] Started${refresh ? ' with repository refresh' : ''}.`);
+        releaseBuildProgressSink = (progress) => {
+            if (progress.requestId !== requestId) return;
+            console.info(`[release:list-builds:${requestId}] ${phase} completed in ${Math.max(0, progress.elapsedMs - phaseStartedAt)}ms (${progress.elapsedMs}ms total).`);
+            phase = progress.phase; phaseStartedAt = progress.elapsedMs; console.info(`[release:list-builds:${requestId}] Starting: ${phase}.`); update();
+        };
+        try { builds = await window.buildApi.listReleaseBuilds(refresh, requestId); table.setItems(builds); }
+        finally { const total = elapsed(); window.clearInterval(timer); releaseBuildProgressSink = undefined; console.info(`[release:list-builds:${requestId}] Finished with ${builds.length} visible build${builds.length === 1 ? '' : 's'} in ${total.toFixed(0)}ms.`); }
+    }, { label: 'Loading dashboard builds' });
+    options.header.querySelector<HTMLButtonElement>('#deploy-refresh-builds')?.addEventListener('click', () => void load(true).catch(showError));
     options.header.querySelector<HTMLButtonElement>('#deploy-build-guide')?.addEventListener('click', () => helpSidebar.toggle(createBuildGuide(config.repository, platformLabels)));
     options.header.querySelector<HTMLButtonElement>('#deploy-create-build')?.addEventListener('click', () => void window.buildApi.getReleaseDeploymentInfo().then((info) => openCreateBuild(builds, info.version, platforms, () => void load().catch(showError))).catch(showError));
-    await load().catch(showError);
+    await load(false).catch(showError);
 }
 
 function productionAction(build: ReleaseBuild, builds: ReleaseBuild[], refresh: () => void): HTMLElement {
-    if (build.status === 'failed') {
-        const button = createButton({ label: 'Open workflow', className: 'btn-secondary', size: 'sm', symbol: 'action', disabled: !build.workflowUrl });
-        button.addEventListener('click', () => { if (build.workflowUrl) void window.buildApi.openExternalUrl(build.workflowUrl); });
-        return button;
-    }
     const unavailable = build.status === 'building';
     const button = createButton({ label: unavailable ? 'Building' : build.production ? 'Production' : 'Roll to production', className: build.production || unavailable ? 'btn-secondary' : 'btn-primary', size: 'sm', symbol: build.production ? 'check' : unavailable ? 'action' : 'play', disabled: build.production || unavailable });
     button.addEventListener('click', async () => {

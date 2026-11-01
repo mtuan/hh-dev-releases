@@ -255,9 +255,9 @@ export interface ReleaseBuild {
     production: boolean;
     assets: number;
     platform: ReleasePlatform;
-    status: 'building' | 'ready' | 'failed';
-    workflowUrl?: string;
+    status: 'building' | 'ready';
 }
+export interface ReleaseBuildLoadProgress { requestId: string; phase: string; elapsedMs: number; }
 export interface CreateReleaseBuildRequest { version: string; channel: UpdateChannel; platform: ReleasePlatform; }
 export interface ManagedJobProjectSnapshot { id: string; name: string; projectPath: string; orientation: ProjectOrientation; creatorExecutable: string; }
 export interface ManagedJobTask {
@@ -388,7 +388,8 @@ export interface BuildApi {
     onMacSigningProgress(callback: (progress: MacSigningProgress) => void): void;
     openXcode(): Promise<void>;
     saveReleaseDeploymentConfig(config: ReleaseDeploymentConfig): Promise<ReleaseDeploymentConfig>;
-    listReleaseBuilds(): Promise<ReleaseBuild[]>;
+    listReleaseBuilds(refresh?: boolean, requestId?: string): Promise<ReleaseBuild[]>;
+    onReleaseBuildsProgress(callback: (progress: ReleaseBuildLoadProgress) => void): void;
     createReleaseBuild(request: CreateReleaseBuildRequest): Promise<string>;
     promoteReleaseBuild(tag: string): Promise<string>;
     openBuildOutput(projectId: string, profileId: string): Promise<void>;

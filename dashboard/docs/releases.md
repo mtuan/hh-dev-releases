@@ -65,7 +65,9 @@ These become `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD`, and `WINDOWS_PUBLISHER_NAME
 1. Open **Deploy → Builds** and choose **New build**.
 2. Select one configured platform, enter a semantic version, and choose Stable or Beta.
 3. The dashboard snapshots its source and pushes one platform-specific build request. GitHub Actions builds and uploads only that platform. macOS and Windows artifacts for the same version share one GitHub Release, so rebuilding Windows does not rebuild or replace working macOS artifacts, and vice versa.
-4. When the build is ready, choose **Roll to production**.
+4. GitHub Actions commits the final status, artifact names, timestamps, and workflow URL to `results/builds/<platform>/<version>.json` in the release-control repository.
+5. Choose **Refresh** to pull those result manifests. Normal page opening reads the local release repository and does not query GitHub APIs.
+6. When the build is ready, choose **Roll to production**.
 
 Use Patch for compatible fixes, Minor for backward-compatible features, and Major for breaking changes. Stable is a production candidate; Beta is for developer testing. A platform build may be retried and republished without changing the other platform. Creating a build does not affect installed applications until that version is explicitly rolled to production.
 

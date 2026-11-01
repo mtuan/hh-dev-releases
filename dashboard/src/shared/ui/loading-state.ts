@@ -31,13 +31,13 @@ export function createLoadingState(options: LoadingStateOptions = {}): LoadingSt
  * Runs asynchronous work behind the shared loading state without replacing the
  * mounted content subtree or its interactive state.
  */
-export async function runWithLoadingState<T>(host: HTMLElement, task: () => Promise<T>, options: LoadingStateOptions = {}): Promise<T> {
+export async function runWithLoadingState<T>(host: HTMLElement, task: (loading: LoadingState) => Promise<T>, options: LoadingStateOptions = {}): Promise<T> {
     const loading = createLoadingState(options);
     host.classList.add('ui-loading-host');
     host.setAttribute('aria-busy', 'true');
     host.appendChild(loading.element);
     try {
-        return await task();
+        return await task(loading);
     } finally {
         loading.element.remove();
         if (!host.querySelector('.ui-loading-state')) {

@@ -1,8 +1,9 @@
 {
   "action": "build",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "channel": "stable",
-  "tag": "dashboard-v0.1.2",
+  "tag": "dashboard-v0.1.1",
   "platform": "macos",
-  "createdAt": "2026-11-01T01:58:35.385Z"
+  "createdAt": "2026-11-01T02:51:21.393Z",
+  "jobId": "job-adffc492-efe7-4daf-a012-a2c2e37cbe4f"
 }

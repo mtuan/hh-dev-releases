@@ -111,6 +111,60 @@ jobs:
           fi
           gh release upload "$tag" release/* --repo "${GITHUB_REPOSITORY}" --clobber
 
+  record-build-result:
+    needs: [command, macos, windows, publish-platform]
+    if: always() && needs.command.outputs.action == 'build'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ github.ref_name }}' }
+      - name: Synchronize release-control branch
+        run: git pull --ff-only origin "${GITHUB_REF_NAME}"
+      - name: Write local build result manifest
+        env:
+          GH_TOKEN: '${{ github.token }}'
+          VERSION: '${{ needs.command.outputs.version }}'
+          PLATFORM: '${{ needs.command.outputs.platform }}'
+          TAG: '${{ needs.command.outputs.tag }}'
+          PLATFORM_RESULT: "${{ needs.command.outputs.platform == 'macos' && needs.macos.result || needs.windows.result }}"
+          PUBLISH_RESULT: '${{ needs.publish-platform.result }}'
+          WORKFLOW_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { execFileSync } = require('child_process');
+          const success = process.env.PLATFORM_RESULT === 'success' && process.env.PUBLISH_RESULT === 'success';
+          let release = {};
+          if (success) {
+            release = JSON.parse(execFileSync('gh', ['release', 'view', process.env.TAG, '--repo', process.env.GITHUB_REPOSITORY, '--json', 'assets,publishedAt,url'], { encoding: 'utf8' }));
+          }
+          const result = {
+            schemaVersion: 1,
+            status: success ? 'success' : 'failed',
+            platform: process.env.PLATFORM,
+            version: process.env.VERSION,
+            tag: process.env.TAG,
+            completedAt: new Date().toISOString(),
+            workflowUrl: process.env.WORKFLOW_URL,
+            releaseUrl: release.url,
+            publishedAt: release.publishedAt,
+            assets: (release.assets || []).map((asset) => asset.name),
+            ...(!success ? { error: `GitHub Actions failed to build ${process.env.PLATFORM} v${process.env.VERSION}. Workflow: ${process.env.WORKFLOW_URL}` } : {}),
+          };
+          const file = path.join('results', 'builds', process.env.PLATFORM, `${process.env.VERSION}.json`);
+          fs.mkdirSync(path.dirname(file), { recursive: true });
+          fs.writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`);
+          NODE
+      - name: Commit build result manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "results/builds/${{ needs.command.outputs.platform }}/${{ needs.command.outputs.version }}.json"
+          git commit -m "result: dashboard ${{ needs.command.outputs.platform }} v${{ needs.command.outputs.version }}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
   promote:
     needs: command
     if: needs.command.outputs.action == 'promote'
