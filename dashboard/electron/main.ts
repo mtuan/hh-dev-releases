@@ -227,7 +227,7 @@ async function runManagedOperation<T>(type: ManagedJobType, name: string, taskNa
     }
 }
 
-for (const interrupted of readManagedJobs().filter((job) => job.status === 'pending' || job.status === 'running')) {
+for (const interrupted of readManagedJobs().filter((job) => (job.status === 'pending' || job.status === 'running') && !(job.type === 'build' && job.sourceUrl === '/deploy/builds'))) {
     appendManagedLog(interrupted.id, '[build-dashboard] Job was interrupted when the dashboard stopped.');
     updateManagedJob(interrupted.id, { status: 'canceled' });
 }
@@ -3258,6 +3258,8 @@ function ensureR2Bucket(config: ReleaseDeploymentConfig, jobId: string): void {
 
 const RELEASE_REPOSITORY_MARKER = '.cocos-build-dashboard-release.json';
 const RELEASE_COMMAND_FILE = '.release-command.json';
+type ReleaseBuildResult = { status: 'success' | 'failed'; completedAt: string; workflowUrl?: string; releaseUrl?: string; publishedAt?: string; assets?: string[]; error?: string };
+const releaseBuildMonitors = new Map<string, ReturnType<typeof setTimeout>>();
 
 function git(repositoryPath: string, args: string[]): string {
     return execFileSync('git', args, { cwd: repositoryPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -3293,6 +3295,51 @@ function resolveReleaseRepository(config: ReleaseDeploymentConfig): { repository
 function writeJson(file: string, value: unknown): void {
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+function releaseBuildResult(repositoryPath: string, platform: ReleasePlatform, version: string): ReleaseBuildResult | undefined {
+    const file = path.join(repositoryPath, 'results', 'builds', platform, `${version}.json`);
+    try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) as ReleaseBuildResult : undefined; } catch { return undefined; }
+}
+
+function ensureReleaseWorkflowTask(job: ManagedJob): number {
+    let index = job.tasks.findIndex((task) => task.id === `${job.id}:github-actions`);
+    if (index >= 0) return index;
+    job.tasks.push({ id: `${job.id}:github-actions`, name: 'Build and publish with GitHub Actions', status: 'pending', progress: 0 }); upsertManagedJob(job); index = job.tasks.length - 1; return index;
+}
+
+function markReleaseJobRunning(job: ManagedJob): number {
+    const taskIndex = ensureReleaseWorkflowTask(job); job.status = 'running'; job.progress = Math.max(70, job.progress); delete job.finishedAt; delete job.durationMs; upsertManagedJob(job); updateManagedTask(job.id, taskIndex, 'running', 10); return taskIndex;
+}
+
+function settleReleaseJob(job: ManagedJob, platform: ReleasePlatform, version: string, result: ReleaseBuildResult): void {
+    releaseBuildMonitors.get(job.id) && clearTimeout(releaseBuildMonitors.get(job.id)); releaseBuildMonitors.delete(job.id);
+    const taskIndex = ensureReleaseWorkflowTask(job); const detail = result.status === 'success' ? `GitHub Actions published ${platform} v${version}.${result.releaseUrl ? ` Release: ${result.releaseUrl}` : ''}` : result.error || `GitHub Actions failed to build ${platform} v${version}.${result.workflowUrl ? ` Workflow: ${result.workflowUrl}` : ''}`;
+    appendManagedLog(job.id, `[build-dashboard] ${detail}`); updateManagedTask(job.id, taskIndex, result.status, 100, result.status === 'failed' ? detail : undefined); job.finishedAt = result.completedAt; updateManagedJob(job.id, { status: result.status, progress: 100, finishedAt: result.completedAt });
+}
+
+function monitorReleaseBuild(jobId: string, platform: ReleasePlatform, version: string): void {
+    if (releaseBuildMonitors.has(jobId)) return;
+    const poll = (): void => {
+        releaseBuildMonitors.delete(jobId); const job = readManagedJobs().find((candidate) => candidate.id === jobId); if (!job || job.status === 'failed' || job.status === 'canceled') return;
+        try {
+            const config = readReleaseDeploymentConfig(); const resolved = resolveReleaseRepository(config); pullReleaseRepository(resolved.repositoryPath, resolved.branch); const result = releaseBuildResult(resolved.repositoryPath, platform, version);
+            if (result) { settleReleaseJob(job, platform, version, result); return; }
+        } catch (error) { console.warn(`[release:monitor] Could not refresh ${platform} v${version}:`, error); }
+        const timer = setTimeout(poll, 15_000); timer.unref(); releaseBuildMonitors.set(jobId, timer);
+    };
+    const timer = setTimeout(poll, 1_000); timer.unref(); releaseBuildMonitors.set(jobId, timer);
+}
+
+function resumeReleaseBuildMonitors(): void {
+    const jobs = readManagedJobs().filter((job) => job.type === 'build' && job.sourceUrl === '/deploy/builds' && job.status === 'running'); if (!jobs.length) return;
+    try {
+        const resolved = resolveReleaseRepository(readReleaseDeploymentConfig());
+        for (const platform of ['macos', 'windows'] as ReleasePlatform[]) {
+            const directory = path.join(resolved.repositoryPath, 'requests', 'builds', platform); if (!fs.existsSync(directory)) continue;
+            for (const file of fs.readdirSync(directory).filter((entry) => entry.endsWith('.json'))) { const request = JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')) as { version: string; jobId?: string }; if (request.jobId && jobs.some((job) => job.id === request.jobId)) monitorReleaseBuild(request.jobId, platform, request.version); }
+        }
+    } catch (error) { console.warn('[release:monitor] Could not resume release build monitors:', error); }
 }
 
 function copyReleaseWorkflow(repositoryPath: string): void {
@@ -3430,45 +3477,42 @@ ipcMain.handle('release:list-builds', async (event, refresh = false, requestId =
         const directory = path.join(requestsDirectory, platform); if (!fs.existsSync(directory)) return [];
         return fs.readdirSync(directory).filter((file) => file.endsWith('.json')).map((file) => ({ ...JSON.parse(fs.readFileSync(path.join(directory, file), 'utf8')) as { version: string; channel: import('./types').UpdateChannel; tag: string; createdAt: string; jobId?: string }, platform }));
     });
-    type BuildResult = { status: 'success' | 'failed'; completedAt: string; workflowUrl?: string; releaseUrl?: string; publishedAt?: string; assets?: string[]; error?: string };
     progress('Reading local build results');
     progress('Reconciling build and job statuses');
     const builds = requests.flatMap((request): ReleaseBuild[] => {
         const resultFile = path.join(resolved.repositoryPath, 'results', 'builds', request.platform, `${request.version}.json`);
-        let result: BuildResult | undefined; try { if (fs.existsSync(resultFile)) result = JSON.parse(fs.readFileSync(resultFile, 'utf8')) as BuildResult; } catch { /* An incomplete result is treated as still building. */ }
+        let result: ReleaseBuildResult | undefined; try { if (fs.existsSync(resultFile)) result = JSON.parse(fs.readFileSync(resultFile, 'utf8')) as ReleaseBuildResult; } catch { /* An incomplete result is treated as still building. */ }
         const marker = `[build-dashboard] Pushed ${request.platform} v${request.version}`;
         const job = readManagedJobs().find((candidate) => candidate.id === request.jobId) ?? readManagedJobs().find((candidate) => candidate.type === 'build' && candidate.logs.some((line) => line.includes(marker)));
+        if (job && result && job.status !== result.status) settleReleaseJob(job, request.platform, request.version, result);
+        else if (job && !result && job.status === 'success') { markReleaseJobRunning(job); appendManagedLog(job.id, `[build-dashboard] Waiting for GitHub Actions to publish ${request.platform} v${request.version}.`); monitorReleaseBuild(job.id, request.platform, request.version); }
+        else if (job && !result && job.status === 'running') monitorReleaseBuild(job.id, request.platform, request.version);
         const failed = result?.status === 'failed' || job?.status === 'failed';
         const assets = result?.assets ?? [];
         const platformAssets = assets.filter((name) => request.platform === 'macos' ? /\.(?:dmg|zip)$/i.test(name) : /\.exe$/i.test(name));
         if (failed) {
-            if (result?.status === 'failed' && job && job.status !== 'failed') {
-                const finishedAt = result.completedAt; const error = result.error || `GitHub Actions failed to build ${request.platform} v${request.version}.${result.workflowUrl ? ` Workflow: ${result.workflowUrl}` : ''}`;
-                appendManagedLog(job.id, `[build-dashboard] ${error}`);
-                job.status = 'failed'; job.progress = 100; job.finishedAt = finishedAt; job.durationMs = new Date(finishedAt).getTime() - new Date(job.startedAt).getTime();
-                job.tasks.push({ id: `${job.id}:github-actions`, name: 'Build and publish with GitHub Actions', status: 'failed', progress: 100, startedAt: job.tasks.at(-1)?.finishedAt ?? job.startedAt, finishedAt, durationMs: Math.max(0, new Date(finishedAt).getTime() - new Date(job.tasks.at(-1)?.finishedAt ?? job.startedAt).getTime()), error });
-                upsertManagedJob(job);
-            }
             return [];
         }
-        return [{ id: `${request.tag}-${request.platform}`, tag: request.tag, version: request.version, name: `Dashboard v${request.version}`, platform: request.platform, channel: request.channel, createdAt: request.createdAt, publishedAt: result?.publishedAt ?? result?.completedAt, url: result?.releaseUrl ?? `https://github.com/${resolved.repository}/releases/tag/${request.tag}`, production: request.tag === config.productionTag, assets: platformAssets.length, status: result?.status === 'success' && platformAssets.length ? 'ready' : 'building' }];
+        return [{ id: `${request.tag}-${request.platform}`, tag: request.tag, version: request.version, name: `Dashboard v${request.version}`, platform: request.platform, channel: request.channel, createdAt: request.createdAt, publishedAt: result?.publishedAt ?? result?.completedAt, url: result?.releaseUrl ?? `https://github.com/${resolved.repository}/releases/tag/${request.tag}`, production: request.tag === config.productionTag, assets: platformAssets.length, status: result?.status === 'success' && platformAssets.length ? 'ready' : 'building', jobId: request.jobId }];
     });
     progress(`Complete · ${builds.length} build${builds.length === 1 ? '' : 's'}`);
     return builds;
 });
-ipcMain.handle('release:create-build', (_event, request: CreateReleaseBuildRequest) => runManagedOperation('build', `Build dashboard v${request.version}`, 'Queue signed release build', async (jobId) => {
-    let config = readReleaseDeploymentConfig(); if (!releaseDeploymentConfigComplete(config)) throw new Error('Configure the release repository and at least one complete platform before creating a build.');
-    const platforms = releasePlatforms(config); if (!platforms.includes(request.platform)) throw new Error(`${request.platform === 'macos' ? 'macOS' : 'Windows'} signing is not completely configured.`);
-    if (!config.configuredAt) config = await verifyReleaseDeployment(config, jobId);
-    const resolved = resolveReleaseRepository(config); pullReleaseRepository(resolved.repositoryPath, resolved.branch); const version = request.version;
-    updateManagedJob(jobId, { progress: 20 }); syncDashboardSource(resolved.repositoryPath); updateManagedJob(jobId, { progress: 65 });
-    copyReleaseWorkflow(resolved.repositoryPath);
-    const command = { action: 'build', version, channel: request.channel, tag: `dashboard-v${version}`, platform: request.platform, createdAt: new Date().toISOString(), jobId };
-    const requestFile = `requests/builds/${request.platform}/${version}.json`;
-    writeJson(path.join(resolved.repositoryPath, requestFile), command); writeJson(path.join(resolved.repositoryPath, RELEASE_COMMAND_FILE), command);
-    commitAndPush(resolved.repositoryPath, resolved.branch, `release: build dashboard ${request.platform} v${version}`, ['dashboard', '.github/workflows/release.yml', requestFile, RELEASE_COMMAND_FILE], jobId);
-    appendManagedLog(jobId, `[build-dashboard] Pushed ${request.platform} v${version} (${request.channel}) to ${config.repository}. GitHub Actions will build and upload only that platform.`); return jobId;
-}, { action: 'Build dashboard release', sourceUrl: '/deploy/builds' }));
+ipcMain.handle('release:create-build', async (_event, request: CreateReleaseBuildRequest) => {
+    const jobId = `job-${crypto.randomUUID()}`; const name = `Build dashboard v${request.version}`; createManagedJob(jobId, 'build', name, undefined, undefined, ['Queue release build', 'Build and publish with GitHub Actions'], { action: 'Build dashboard release', sourceUrl: '/deploy/builds' }); updateManagedJob(jobId, { status: 'running', progress: 5 }); updateManagedTask(jobId, 0, 'running', 5); appendManagedLog(jobId, `[build-dashboard] ${name} started.`);
+    try {
+        let config = readReleaseDeploymentConfig(); if (!releaseDeploymentConfigComplete(config)) throw new Error('Configure the release repository and at least one complete platform before creating a build.');
+        const platforms = releasePlatforms(config); if (!platforms.includes(request.platform)) throw new Error(`${request.platform === 'macos' ? 'macOS' : 'Windows'} signing is not completely configured.`);
+        if (!config.configuredAt) config = await verifyReleaseDeployment(config, jobId);
+        const resolved = resolveReleaseRepository(config); pullReleaseRepository(resolved.repositoryPath, resolved.branch); const version = request.version;
+        updateManagedJob(jobId, { progress: 20 }); syncDashboardSource(resolved.repositoryPath); updateManagedJob(jobId, { progress: 65 }); copyReleaseWorkflow(resolved.repositoryPath);
+        const command = { action: 'build', version, channel: request.channel, tag: `dashboard-v${version}`, platform: request.platform, createdAt: new Date().toISOString(), jobId }; const requestFile = `requests/builds/${request.platform}/${version}.json`;
+        writeJson(path.join(resolved.repositoryPath, requestFile), command); writeJson(path.join(resolved.repositoryPath, RELEASE_COMMAND_FILE), command); commitAndPush(resolved.repositoryPath, resolved.branch, `release: build dashboard ${request.platform} v${version}`, ['dashboard', '.github/workflows/release.yml', requestFile, RELEASE_COMMAND_FILE], jobId);
+        appendManagedLog(jobId, `[build-dashboard] Pushed ${request.platform} v${version} (${request.channel}) to ${config.repository}. GitHub Actions will build and upload only that platform.`); updateManagedTask(jobId, 0, 'success', 100); updateManagedTask(jobId, 1, 'running', 10); updateManagedJob(jobId, { status: 'running', progress: 70 }); appendManagedLog(jobId, `[build-dashboard] Waiting for GitHub Actions to publish ${request.platform} v${version}.`); monitorReleaseBuild(jobId, request.platform, version); return jobId;
+    } catch (error) {
+        const message = error instanceof Error ? error.stack ?? error.message : String(error); appendManagedLog(jobId, `[build-dashboard] ${name} failed.\n${message}`); updateManagedTask(jobId, 0, 'failed', 100, message); updateManagedJob(jobId, { status: 'failed', progress: 100 }); throw error;
+    }
+});
 ipcMain.handle('release:promote-build', (_event, tag: string) => runManagedOperation('deploy', `Roll ${tag} to production`, 'Publish selected build to update feed', async (jobId) => {
     const config = readReleaseDeploymentConfig(); if (!config.releaseRepositoryPath || !config.configuredAt) throw new Error('Deployment configuration has not been verified. Open Deploy → Configurations and save it successfully first.');
     const resolved = resolveReleaseRepository(config); pullReleaseRepository(resolved.repositoryPath, resolved.branch); const command = { action: 'promote', tag, createdAt: new Date().toISOString() };
@@ -3811,7 +3855,7 @@ ipcMain.handle('app:renderer-ready', (event) => {
 });
 
 app.whenReady().then(() => {
-    reconcileInterruptedBuilds(); createWindow();
+    reconcileInterruptedBuilds(); createWindow(); resumeReleaseBuildMonitors();
     dashboardUpdater = new DashboardUpdater({
         hasActiveWork: () => readManagedJobs().some((job) => job.type !== 'update' && (job.status === 'pending' || job.status === 'running')),
         onState: (state) => mainWindow?.webContents.send('updates:state', state),

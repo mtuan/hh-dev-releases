@@ -256,6 +256,7 @@ export interface ReleaseBuild {
     assets: number;
     platform: ReleasePlatform;
     status: 'building' | 'ready';
+    jobId?: string;
 }
 export interface ReleaseBuildLoadProgress { requestId: string; phase: string; elapsedMs: number; }
 export interface CreateReleaseBuildRequest { version: string; channel: UpdateChannel; platform: ReleasePlatform; }

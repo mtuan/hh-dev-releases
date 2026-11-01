@@ -1,5 +1,6 @@
-import type { ReleaseBuild, ReleaseBuildLoadProgress, ReleasePlatform, UpdateChannel } from '../../../electron/types';
+import type { ManagedJob, ReleaseBuild, ReleaseBuildLoadProgress, ReleasePlatform, UpdateChannel } from '../../../electron/types';
 import { createDataTable } from '../../shared/ui/data-table';
+import { createActionList, createActionListItem } from '../../shared/ui/action-list';
 import { createDynamicForm } from '../../shared/ui/dynamic-form';
 import { createButton } from '../../shared/ui/fields';
 import { createContentPanel } from '../../shared/ui/content-panel';
@@ -8,6 +9,7 @@ import { showConfirm, showModal, showTechnicalError } from '../../shared/ui/moda
 import { renderPageHeader } from '../../shared/ui/page-header';
 import { createHelpSidebar } from '../../shared/ui/help-sidebar';
 import { createSetupGuide } from '../../shared/ui/setup-guide';
+import { formatRelativeTime } from '../../shared/time';
 
 let releaseBuildProgressSink: ((progress: ReleaseBuildLoadProgress) => void) | undefined;
 window.buildApi.onReleaseBuildsProgress((progress) => releaseBuildProgressSink?.(progress));
@@ -55,7 +57,7 @@ function nextVersion(builds: ReleaseBuild[], currentVersion: string, increment: 
     return `${core(target)}-beta.${beta}`;
 }
 
-export async function renderDeployBuilds(options: { header: HTMLElement; content: HTMLElement; onOpenConfigurations(): void }): Promise<void> {
+export async function renderDeployBuilds(options: { header: HTMLElement; content: HTMLElement; onOpenConfigurations(): void; onOpenJob(jobId: string): void }): Promise<void> {
     const config = await window.buildApi.getReleaseDeploymentConfig();
     const complete = (...values: string[]): boolean => values.every((value) => Boolean(value.trim()));
     const platforms: Array<{ value: ReleasePlatform; label: string }> = [
@@ -75,14 +77,28 @@ export async function renderDeployBuilds(options: { header: HTMLElement; content
     const platformLabels = platforms.map((platform) => platform.label);
     renderPageHeader(options.header, { title: 'Dashboard builds', description: `Create independent ${platformLabels.join(' and ')} builds, choose which version is in production, or roll back to a known working version.`, actions: [{ id: 'deploy-build-guide', label: 'Guide', className: 'btn-secondary', symbol: 'help' }, { id: 'deploy-refresh-builds', label: 'Refresh', className: 'btn-secondary', symbol: 'refresh' }, { id: 'deploy-create-build', label: 'New build', className: 'btn-primary', symbol: 'add' }] });
     let builds: ReleaseBuild[] = [];
-    const table = createDataTable<ReleaseBuild>({ keyOf: (build) => build.id, items: [], emptyMessage: 'No dashboard builds yet.', pageSize: 10, pageSizeOptions: [10, 25, 50], preferenceKey: 'deploy-builds', columns: [
+    const table = createDataTable<ReleaseBuild>({ keyOf: (build) => build.id, items: [], emptyMessage: 'No completed dashboard builds yet.', pageSize: 10, pageSizeOptions: [10, 25, 50], preferenceKey: 'deploy-builds', columns: [
         { id: 'version', label: 'Version', width: '150px', render: (build) => `v${build.version}` }, { id: 'platform', label: 'Platform', width: '120px', render: (build) => build.platform === 'macos' ? 'macOS' : 'Windows' }, { id: 'name', label: 'Build', render: (build) => build.name },
         { id: 'created', label: 'Created', width: '210px', render: (build) => new Date(build.publishedAt ?? build.createdAt).toLocaleString() },
         { id: 'status', label: 'Status', width: '120px', render: badge }, { id: 'action', label: '', width: '190px', align: 'end', render: (build) => productionAction(build, builds, () => void load()) },
     ] });
     const layout = document.createElement('div'); layout.className = 'deploy-config-layout';
-    const stack = document.createElement('div'); stack.className = 'deploy-panel-stack'; stack.appendChild(table.element);
+    const latestJobSlot = document.createElement('div'); latestJobSlot.hidden = true;
+    const stack = document.createElement('div'); stack.className = 'deploy-panel-stack'; stack.append(latestJobSlot, table.element);
     const helpSidebar = createHelpSidebar(); layout.append(stack, helpSidebar.element); options.content.replaceChildren(layout);
+    const renderLatestJob = (allBuilds: ReleaseBuild[], jobs: ManagedJob[]): void => {
+        const buildJobs = jobs.filter((job) => job.type === 'build' && job.sourceUrl === '/deploy/builds').sort((left, right) => new Date(right.startedAt).getTime() - new Date(left.startedAt).getTime());
+        const latestJob = buildJobs[0]; const pending = allBuilds.filter((build) => build.status === 'building').sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())[0]; const newestReady = allBuilds.filter((build) => build.status === 'ready').sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())[0];
+        const pendingMatchesLatest = Boolean(pending && latestJob && (pending.jobId === latestJob.id || latestJob.name === `Build dashboard v${pending.version}`));
+        const readyIsNewer = Boolean(latestJob && newestReady && new Date(newestReady.createdAt).getTime() > new Date(latestJob.startedAt).getTime());
+        const visible = pending && (!latestJob || pendingMatchesLatest || new Date(pending.createdAt).getTime() >= new Date(latestJob.startedAt).getTime()) ? { job: latestJob, build: pending, status: 'running' as const } : latestJob?.status === 'failed' && !readyIsNewer ? { job: latestJob, build: undefined, status: 'failed' as const } : undefined;
+        if (!visible) { latestJobSlot.hidden = true; latestJobSlot.replaceChildren(); return; }
+        const list = createActionList(); const platform = visible.build?.platform === 'macos' ? 'macOS' : visible.build?.platform === 'windows' ? 'Windows' : undefined;
+        const meta = [platform, visible.build ? `v${visible.build.version}` : undefined, formatRelativeTime(visible.job?.startedAt ?? visible.build?.createdAt ?? new Date().toISOString())].filter(Boolean).join(' · ');
+        const badge = document.createElement('span'); badge.className = `badge badge-${visible.status}`; badge.textContent = visible.status === 'running' ? 'Building' : 'Failed';
+        const item = createActionListItem({ title: visible.job?.name ?? visible.build?.name ?? 'Dashboard build', meta, trailing: badge, onActivate: visible.job ? () => options.onOpenJob(visible.job!.id) : undefined }); list.appendChild(item.element);
+        latestJobSlot.replaceChildren(createContentPanel({ title: 'Latest build job', description: visible.status === 'running' ? 'The newest platform build is still running.' : 'The newest platform build failed. Open the job for failure details.', content: list, collapsible: false })); latestJobSlot.hidden = false;
+    };
     const load = async (refresh = false): Promise<void> => runWithLoadingState(table.element, async (loading) => {
         const requestId = crypto.randomUUID(); const startedAt = performance.now(); let phase = refresh ? 'Preparing refresh' : 'Preparing build list'; let phaseStartedAt = 0;
         const elapsed = (): number => performance.now() - startedAt;
@@ -94,7 +110,7 @@ export async function renderDeployBuilds(options: { header: HTMLElement; content
             console.info(`[release:list-builds:${requestId}] ${phase} completed in ${Math.max(0, progress.elapsedMs - phaseStartedAt)}ms (${progress.elapsedMs}ms total).`);
             phase = progress.phase; phaseStartedAt = progress.elapsedMs; console.info(`[release:list-builds:${requestId}] Starting: ${phase}.`); update();
         };
-        try { builds = await window.buildApi.listReleaseBuilds(refresh, requestId); table.setItems(builds); }
+        try { const [allBuilds, jobs] = await Promise.all([window.buildApi.listReleaseBuilds(refresh, requestId), window.buildApi.getJobs()]); builds = allBuilds.filter((build) => build.status === 'ready'); table.setItems(builds); renderLatestJob(allBuilds, jobs); }
         finally { const total = elapsed(); window.clearInterval(timer); releaseBuildProgressSink = undefined; console.info(`[release:list-builds:${requestId}] Finished with ${builds.length} visible build${builds.length === 1 ? '' : 's'} in ${total.toFixed(0)}ms.`); }
     }, { label: 'Loading dashboard builds' });
     options.header.querySelector<HTMLButtonElement>('#deploy-refresh-builds')?.addEventListener('click', () => void load(true).catch(showError));
