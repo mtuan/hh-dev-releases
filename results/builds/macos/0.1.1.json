@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "status": "success",
+  "platform": "macos",
+  "version": "0.1.1",
+  "tag": "dashboard-v0.1.1",
+  "completedAt": "2026-11-01T02:57:05.318Z",
+  "workflowUrl": "https://github.com/mtuan/hh-dev-releases/actions/runs/41266857251",
+  "releaseUrl": "https://github.com/mtuan/hh-dev-releases/releases/tag/dashboard-v0.1.1",
+  "publishedAt": "2026-11-01T02:56:48Z",
+  "assets": [
+    "builder-debug.yml",
+    "Cocos.Build.Dashboard-0.1.1-mac-arm64.dmg",
+    "Cocos.Build.Dashboard-0.1.1-mac-arm64.dmg.blockmap",
+    "Cocos.Build.Dashboard-0.1.1-mac-arm64.zip",
+    "Cocos.Build.Dashboard-0.1.1-mac-arm64.zip.blockmap",
+    "Cocos.Build.Dashboard-0.1.1-mac-x64.dmg",
+    "Cocos.Build.Dashboard-0.1.1-mac-x64.dmg.blockmap",
+    "Cocos.Build.Dashboard-0.1.1-mac-x64.zip",
+    "Cocos.Build.Dashboard-0.1.1-mac-x64.zip.blockmap",
+    "latest-mac.yml"
+  ]
+}
